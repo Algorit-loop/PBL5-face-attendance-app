@@ -1,0 +1,63 @@
+body {
+    padding: 20px;
+    background-color: #f8f9fa;
+}
+
+.camera-container, .employee-container {
+    background-color: white;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    margin-bottom: 20px;
+}
+
+#camera-feed {
+    width: 100%;
+    max-height: 500px;
+    object-fit: contain;
+    border-radius: 4px;
+    background-color: #000;
+}
+
+.camera-controls {
+    background-color: #f8f9fa;
+    padding: 15px;
+    border-radius: 4px;
+    margin-bottom: 15px;
+}
+
+.camera-info {
+    font-size: 0.9em;
+    color: #666;
+}
+
+.camera-info p {
+    margin-bottom: 5px;
+}
+
+.table {
+    margin-top: 20px;
+}
+
+.btn {
+    margin-right: 5px;
+}
+
+.modal-content {
+    border-radius: 8px;
+}
+
+.form-control {
+    border-radius: 4px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .camera-container, .employee-container {
+        margin-bottom: 20px;
+    }
+    
+    #camera-feed {
+        max-height: 300px;
+    }
+} 
