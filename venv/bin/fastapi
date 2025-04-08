@@ -1,4 +1,4 @@
-#!/home/algorit/Desktop/Project/CameraWithAI/venv/bin/python3
+#!/home/algorit/Desktop/Project/PBL5-face-attendance-app/venv/bin/python3
 # -*- coding: utf-8 -*-
 import re
 import sys

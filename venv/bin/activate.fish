@@ -33,7 +33,7 @@ end
 # Unset irrelevant variables.
 deactivate nondestructive
 
-set -gx VIRTUAL_ENV /home/algorit/Desktop/Project/CameraWithAI/venv
+set -gx VIRTUAL_ENV /home/algorit/Desktop/Project/PBL5-face-attendance-app/venv
 
 set -gx _OLD_VIRTUAL_PATH $PATH
 set -gx PATH "$VIRTUAL_ENV/"bin $PATH
