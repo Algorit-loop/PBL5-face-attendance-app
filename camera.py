@@ -8,6 +8,8 @@ from ultralytics import YOLO  # Thêm dòng này để dùng YOLOv8
 # model = YOLO("yolov8s-face-lindevs.pt") # yolov8n-face-lindevs.pt
 model = YOLO("yolov8n-face-lindevs.pt")
 
+width = 720
+height = 720
 
 # Camera setup
 camera = None
@@ -50,8 +52,8 @@ def get_camera_info() -> Dict[str, Any]:
             "error": "Camera chưa được khởi tạo"
         }
     try:
-        width = int(camera.get(cv2.CAP_PROP_FRAME_WIDTH))
-        height = int(camera.get(cv2.CAP_PROP_FRAME_HEIGHT))
+        # width = int(camera.get(cv2.CAP_PROP_FRAME_WIDTH))
+        # height = int(camera.get(cv2.CAP_PROP_FRAME_HEIGHT))
         fps = camera.get(cv2.CAP_PROP_FPS)
         return {
             "width": width,
@@ -67,8 +69,7 @@ def get_camera_info() -> Dict[str, Any]:
             "error": str(e)
         }
 
-width = 1280
-height = 720
+
 def generate_frames() -> Generator[bytes, None, None]:
     global last_frame_time
     while True:

@@ -11,7 +11,7 @@
 <body>
     <!-- Navigation Bar -->
     <nav class="navbar navbar-expand-lg">
-        <div class="container">
+        <div class="container-fluid">
             <a class="navbar-brand" href="#">
                 <i class="fas fa-user-clock me-2"></i>
                 Hệ thống điểm danh
@@ -20,7 +20,10 @@
                 <span class="navbar-toggler-icon"></span>
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav ms-auto">
+                <!-- Date Time Display -->
+                <div id="datetime" class="date-time ms-auto me-3"></div>
+                
+                <ul class="navbar-nav">
                     <li class="nav-item">
                         <a class="nav-link active" href="#"><i class="fas fa-home me-1"></i> Trang chủ</a>
                     </li>
@@ -36,66 +39,62 @@
     </nav>
 
     <div class="container">
-        <div class="row g-3">
+        <div class="main-content">
             <!-- Camera Section -->
-            <div class="col-lg-6">
-                <div class="camera-container fade-in">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <h2 class="mb-0"><i class="fas fa-video me-2"></i>Camera</h2>
-                        <button class="btn btn-primary" id="toggleCamera">
-                            <i class="fas fa-power-off me-2"></i>
-                            <span id="toggleCameraText">Bật Camera</span>
-                        </button>
-                    </div>
-                    <div class="camera-info mt-3">
-                        <div class="row g-2">
-                            <div class="col-md-4">
-                                <p class="mb-0"><i class="fas fa-desktop me-2"></i>Độ phân giải: <span id="resolution">Chưa khởi động</span></p>
-                            </div>
-                            <div class="col-md-4">
-                                <p class="mb-0"><i class="fas fa-tachometer-alt me-2"></i>FPS: <span id="fps">Chưa khởi động</span></p>
-                            </div>
-                            <div class="col-md-4">
-                                <p class="mb-0"><i class="fas fa-info-circle me-2"></i>Trạng thái: <span id="cameraStatus">Đang tắt</span></p>
-                            </div>
+            <div class="camera-container">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h2 class="mb-0 fs-5"><i class="fas fa-video me-2"></i>Camera</h2>
+                    <button class="btn btn-primary" id="toggleCamera">
+                        <i class="fas fa-power-off me-1"></i>
+                        <span id="toggleCameraText">Bật</span>
+                    </button>
+                </div>
+                <div class="camera-info mt-2">
+                    <div class="row g-2">
+                        <div class="col-md-4">
+                            <p class="mb-0"><i class="fas fa-desktop me-1"></i>Độ phân giải: <span id="resolution">Chưa khởi động</span></p>
+                        </div>
+                        <div class="col-md-4">
+                            <p class="mb-0"><i class="fas fa-tachometer-alt me-1"></i>FPS: <span id="fps">Chưa khởi động</span></p>
+                        </div>
+                        <div class="col-md-4">
+                            <p class="mb-0"><i class="fas fa-info-circle me-1"></i>Trạng thái: <span id="cameraStatus">Đang tắt</span></p>
                         </div>
                     </div>
-                    <div class="video-container">
-                        <img src="/video_feed" alt="Camera Feed" id="camera-feed">
-                        <div class="spinner" id="cameraSpinner"></div>
-                    </div>
+                </div>
+                <div class="video-container">
+                    <img src="/video_feed" alt="Camera Feed" id="camera-feed">
+                    <div class="spinner" id="cameraSpinner"></div>
                 </div>
             </div>
             
             <!-- Employee List Section -->
-            <div class="col-lg-6">
-                <div class="employee-container fade-in">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <h2 class="mb-0"><i class="fas fa-users me-2"></i>Danh sách nhân viên</h2>
-                        <button class="btn btn-primary" onclick="showAddEmployeeModal()">
-                            <i class="fas fa-user-plus me-2"></i>Thêm nhân viên
-                        </button>
-                    </div>
-                    <div class="table-container">
-                        <table class="table">
-                            <thead>
-                                <tr>
-                                    <th>ID</th>
-                                    <th>Họ và tên</th>
-                                    <th>Ngày sinh</th>
-                                    <th>Email</th>
-                                    <th>Số điện thoại</th>
-                                    <th>Địa chỉ</th>
-                                    <th>Giới tính</th>
-                                    <th>Chức vụ</th>
-                                    <th>Thao tác</th>
-                                </tr>
-                            </thead>
-                            <tbody id="employee-list">
-                                <!-- Employee list will be populated by JavaScript -->
-                            </tbody>
-                        </table>
-                    </div>
+            <div class="employee-container">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h2 class="mb-0 fs-5"><i class="fas fa-users me-2"></i>Danh sách nhân viên</h2>
+                    <button class="btn btn-primary" onclick="showAddEmployeeModal()">
+                        <i class="fas fa-user-plus me-1"></i>Thêm nhân viên
+                    </button>
+                </div>
+                <div class="table-container">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Họ và tên</th>
+                                <th>Ngày sinh</th>
+                                <th>Email</th>
+                                <th>Số điện thoại</th>
+                                <th>Địa chỉ</th>
+                                <th>Giới tính</th>
+                                <th>Chức vụ</th>
+                                <th>Thao tác</th>
+                            </tr>
+                        </thead>
+                        <tbody id="employee-list">
+                            <!-- Employee list will be populated by JavaScript -->
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </div>
@@ -173,10 +172,10 @@
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-                        <i class="fas fa-times me-2"></i>Đóng
+                        <i class="fas fa-times me-1"></i>Đóng
                     </button>
                     <button type="button" class="btn btn-primary" onclick="saveEmployee()">
-                        <i class="fas fa-save me-2"></i>Lưu
+                        <i class="fas fa-save me-1"></i>Lưu
                     </button>
                 </div>
             </div>
@@ -185,5 +184,26 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="/static/script.js"></script>
+    <script>
+        // Update date and time display
+        function updateDateTime() {
+            const now = new Date();
+            const dateOptions = { weekday: 'short', year: 'numeric', month: 'numeric', day: 'numeric' };
+            const timeOptions = { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false };
+            
+            const dateStr = now.toLocaleDateString('vi-VN', dateOptions);
+            const timeStr = now.toLocaleTimeString('vi-VN', timeOptions);
+            
+            document.getElementById('datetime').innerHTML = `
+                ${dateStr} | <span class="fw-bold">${timeStr}</span>
+            `;
+        }
+
+        // Initialize date time and update every second
+        document.addEventListener('DOMContentLoaded', function() {
+            updateDateTime();
+            setInterval(updateDateTime, 1000);
+        });
+    </script>
 </body>
 </html> 

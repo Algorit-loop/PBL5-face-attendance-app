@@ -9,9 +9,12 @@
     --border-radius: 8px;
     --box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
     --transition: all 0.3s ease;
+    --navbar-height: 60px;
 }
 
-body {
+html, body {
+    height: 100%;
+    overflow: hidden;
     background-color: #f5f7fa;
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     color: #333;
@@ -23,8 +26,9 @@ body {
 .navbar {
     background-color: white;
     box-shadow: var(--box-shadow);
-    padding: 1rem 0;
+    padding: 0;
     margin-bottom: 0;
+    height: var(--navbar-height);
 }
 
 .navbar-brand {
@@ -33,68 +37,63 @@ body {
     color: var(--primary-color);
 }
 
+/* Date and Time Display */
+.date-time {
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: var(--primary-color);
+    padding: 0 1rem;
+    display: flex;
+    align-items: center;
+    height: 100%;
+}
+
 /* Container Styles */
 .container {
     max-width: 100%;
-    padding: 1.5rem;
+    padding: 0 0 1rem 0;
     margin: 0;
+    height: calc(100% - var(--navbar-height));
 }
 
 .row {
     margin: 0;
-    --bs-gutter-x: 1.5rem;
-}
-
-/* Card Styles */
-.card {
-    background: white;
-    border-radius: var(--border-radius);
-    box-shadow: var(--box-shadow);
-    transition: var(--transition);
-    margin-bottom: 2rem;
-    border: none;
+    --bs-gutter-x: 0;
     height: 100%;
 }
 
-.card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
-}
-
-.card-header {
-    background-color: white;
-    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
-    padding: 1.25rem;
+/* Main Layout */
+.main-content {
+    display: flex;
+    height: 100%;
+    padding-bottom: 10px;
 }
 
 /* Camera Styles */
 .camera-container {
     background: white;
-    padding: 1.5rem;
+    padding: 1rem;
     border-radius: var(--border-radius);
     box-shadow: var(--box-shadow);
     height: 100%;
     display: flex;
     flex-direction: column;
+    width: 35%; /* Chiếm 35% chiều rộng cho phần camera */
+    overflow: hidden; /* Ngăn nội dung tràn */
+    padding-bottom: 3px;
 }
 
 .video-container {
     position: relative;
     width: 100%;
-    padding-top: 75%; /* 4:3 Aspect Ratio (4/3 = 0.75 or 75%) */
+    height: 0;
+    padding-top: 100%; /* Tỉ lệ 3:4 (ngang:dọc) - chiều cao = 4/3 chiều ngang = 133.33% */
     overflow: hidden;
     background-color: #000;
     border-radius: var(--border-radius);
     margin-top: 1rem;
-}
-
-.video-container img {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
+    flex: 1 1 auto; /* Cho phép co giãn nhưng không vượt quá container */
+    max-height: calc(100% - 120px); /* Giới hạn chiều cao tối đa */
 }
 
 #camera-feed {
@@ -106,40 +105,43 @@ body {
     border-radius: var(--border-radius);
     box-shadow: var(--box-shadow);
     transition: var(--transition);
-    object-fit: contain; /* Ensure the image maintains its aspect ratio */
+    object-fit: contain; /* Đảm bảo hình ảnh giữ nguyên tỉ lệ */
 }
 
 .camera-controls {
-    margin-bottom: 1.5rem;
+    margin-bottom: 0.5rem;
 }
 
 .camera-info {
     background: var(--light-color);
-    padding: 1rem;
+    padding: 0.5rem;
     border-radius: var(--border-radius);
-    margin-top: 1rem;
+    margin-top: 0.5rem;
+    font-size: 0.9rem;
 }
 
 .camera-info p {
-    margin: 0.5rem 0;
+    margin: 0.25rem 0;
     color: var(--secondary-color);
 }
 
 /* Table Styles */
 .employee-container {
     background: white;
-    padding: 1.5rem;
+    padding: 1rem;
     border-radius: var(--border-radius);
     box-shadow: var(--box-shadow);
     height: 100%;
     display: flex;
     flex-direction: column;
+    width: 65%; /* Chiếm 65% chiều rộng cho phần bảng nhân viên */
+    margin-left: 1rem;
 }
 
 .table-container {
     flex: 1;
     overflow: auto;
-    margin-top: 1rem;
+    margin-top: 0.5rem;
 }
 
 .table {
@@ -147,13 +149,13 @@ body {
     margin-bottom: 0;
     border-collapse: separate;
     border-spacing: 0;
-    font-size: 0.95rem;
+    font-size: 0.9rem;
 }
 
 .table th {
     background-color: var(--light-color);
     font-weight: 600;
-    padding: 1rem;
+    padding: 0.75rem;
     border-bottom: 2px solid rgba(0, 0, 0, 0.1);
     position: sticky;
     top: 0;
@@ -161,7 +163,7 @@ body {
 }
 
 .table td {
-    padding: 0.75rem 1rem;
+    padding: 0.5rem 0.75rem;
     vertical-align: middle;
     border-bottom: 1px solid rgba(0, 0, 0, 0.1);
 }
@@ -172,7 +174,7 @@ body {
 
 /* Button Styles */
 .btn {
-    padding: 0.5rem 1rem;
+    padding: 0.4rem 0.8rem;
     border-radius: var(--border-radius);
     font-weight: 500;
     transition: var(--transition);
@@ -207,22 +209,22 @@ body {
 
 .modal-header {
     border-bottom: 1px solid rgba(0, 0, 0, 0.1);
-    padding: 1.25rem;
+    padding: 1rem;
 }
 
 .modal-body {
-    padding: 1.5rem;
+    padding: 1.25rem;
 }
 
 .modal-footer {
     border-top: 1px solid rgba(0, 0, 0, 0.1);
-    padding: 1.25rem;
+    padding: 1rem;
 }
 
 /* Form Styles */
 .form-control {
     border-radius: var(--border-radius);
-    padding: 0.75rem 1rem;
+    padding: 0.5rem 0.75rem;
     border: 1px solid rgba(0, 0, 0, 0.1);
     transition: var(--transition);
 }
@@ -234,55 +236,39 @@ body {
 
 /* Loading Spinner */
 .spinner {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
     width: 40px;
     height: 40px;
     border: 4px solid rgba(74, 107, 255, 0.1);
     border-left-color: var(--primary-color);
     border-radius: 50%;
     animation: spin 1s linear infinite;
-    margin: 2rem auto;
+    z-index: 2;
+    margin: 0;
     display: none;
 }
 
 @keyframes spin {
-    to { transform: rotate(360deg); }
-}
-
-/* Responsive Design */
-@media (max-width: 768px) {
-    .container {
-        padding: 1rem;
-    }
-    
-    .camera-container,
-    .employee-container {
-        padding: 1rem;
-    }
-    
-    .table {
-        font-size: 0.85rem;
-    }
-    
-    .btn {
-        width: 100%;
-        margin-bottom: 0.5rem;
-    }
+    to { transform: translate(-50%, -50%) rotate(360deg); }
 }
 
 /* Animation Classes */
 .fade-in {
-    animation: fadeIn 0.5s ease-in;
+    animation: fadeIn 0.3s ease-in;
 }
 
 @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(20px); }
+    from { opacity: 0; transform: translateY(10px); }
     to { opacity: 1; transform: translateY(0); }
 }
 
 /* Custom Scrollbar */
 ::-webkit-scrollbar {
-    width: 8px;
-    height: 8px;
+    width: 6px;
+    height: 6px;
 }
 
 ::-webkit-scrollbar-track {
@@ -297,13 +283,4 @@ body {
 
 ::-webkit-scrollbar-thumb:hover {
     background: #555;
-}
-
-#cameraSpinner {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    z-index: 2;
-    margin: 0;
 } 

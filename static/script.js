@@ -311,3 +311,24 @@ function showToast(message, type = 'success') {
         toast.remove();
     });
 } 
+
+// Update date and time display
+function updateDateTime() {
+    const now = new Date();
+    const dateOptions = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+    const timeOptions = { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false };
+    
+    const dateStr = now.toLocaleDateString('vi-VN', dateOptions);
+    const timeStr = now.toLocaleTimeString('vi-VN', timeOptions);
+    
+    document.getElementById('datetime').innerHTML = `
+        <div>${dateStr}</div>
+        <div class="fw-bold">${timeStr}</div>
+    `;
+}
+
+// Initialize date time and update every second
+document.addEventListener('DOMContentLoaded', function() {
+    updateDateTime();
+    setInterval(updateDateTime, 1000);
+});
