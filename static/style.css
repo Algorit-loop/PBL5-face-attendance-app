@@ -81,7 +81,7 @@ body {
 .video-container {
     position: relative;
     width: 100%;
-    padding-top: 75% !important; /* 4:3 Aspect Ratio (4/3 = 0.75 or 75%) */
+    padding-top: 75%; /* 4:3 Aspect Ratio (4/3 = 0.75 or 75%) */
     overflow: hidden;
     background-color: #000;
     border-radius: var(--border-radius);
