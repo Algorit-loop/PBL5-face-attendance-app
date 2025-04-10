@@ -21,6 +21,10 @@ app.add_middleware(
 # Mount static files
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
+@app.on_event("shutdown")
+async def shutdown_event():
+    print("Đang giải phóng camera và dọn dẹp...")
+    release_camera()
 # Root endpoint
 @app.get("/")
 async def read_root():
