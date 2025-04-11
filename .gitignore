@@ -7,3 +7,5 @@ yolov8s-face-lindevs.pt
 R18.onnx
 R50.onnx
 
+face_data/
+
