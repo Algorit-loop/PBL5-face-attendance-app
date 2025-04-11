@@ -1,5 +1,8 @@
 fastapi
 uvicorn
 opencv-python
+python-multipart
+pydantic
+numpy
 onnxruntime
 ultralytics

@@ -1,1 +1,9 @@
 venv/
+
+yolov8n-face-lindevs.pt
+yolov8s-face-lindevs.onnx
+yolov8s-face-lindevs.pt
+
+R18.onnx
+R50.onnx
+
