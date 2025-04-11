@@ -47,6 +47,10 @@ async def toggle_camera():
 async def get_camera_status():
     return await routes.get_camera_status()
 
+@app.get("/scan_video_feed")
+async def scan_video_feed():
+    return await routes.scan_video_feed()
+
 # Employee endpoints
 @app.get("/employees", response_model=List[Employee])
 async def get_employees():
@@ -66,4 +70,17 @@ async def update_employee(employee_id: int, employee: Employee):
 
 @app.delete("/employees/{employee_id}")
 async def delete_employee(employee_id: int):
-    return await routes.delete_employee(employee_id) 
+    return await routes.delete_employee(employee_id)
+
+# Face scanning endpoints
+@app.post("/face-scan/start/{employee_id}")
+async def start_face_scan(employee_id: str):
+    return await routes.start_face_scan(employee_id)
+
+@app.get("/face-scan/status")
+async def get_face_scan_status():
+    return await routes.get_face_scan_status()
+
+@app.post("/face-scan/stop")
+async def stop_face_scan():
+    return await routes.stop_face_scan()

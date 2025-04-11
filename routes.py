@@ -26,6 +26,15 @@ async def video_feed():
     """
     return StreamingResponse(camera.generate_frames(), media_type="multipart/x-mixed-replace;boundary=frame")
 
+async def scan_video_feed():
+    """
+    Stream video specifically for face scanning during registration
+    
+    Returns:
+        Streaming response with camera frames optimized for face scanning
+    """
+    return StreamingResponse(camera.scan_frames(), media_type="multipart/x-mixed-replace;boundary=frame")
+
 async def get_camera_info_endpoint():
     """
     Get camera information
@@ -57,6 +66,27 @@ async def get_camera_status():
         Dictionary with camera status
     """
     return {"status": "on" if camera.camera_running else "off"}
+
+# Face scanning endpoints
+async def start_face_scan(employee_id: str):
+    """
+    Start face scanning process for a new employee
+    """
+    camera.face_scanner.start_scan(employee_id)
+    return {"status": "success", "message": "Face scanning started"}
+
+async def get_face_scan_status():
+    """
+    Get current face scanning status
+    """
+    return camera.face_scanner.get_status()
+
+async def stop_face_scan():
+    """
+    Stop face scanning process
+    """
+    camera.face_scanner.scanning = False
+    return {"status": "success", "message": "Face scanning stopped"}
 
 # Employee endpoints
 async def get_employees():
@@ -186,4 +216,4 @@ async def delete_employee(employee_id: int):
     
     database.employees.pop(employee_index)
     database.save_employees(database.employees)
-    return {"message": "Đã xóa nhân viên thành công"} 
+    return {"message": "Đã xóa nhân viên thành công"}

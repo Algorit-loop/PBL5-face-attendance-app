@@ -137,4 +137,173 @@
     .table-container {
         margin-top: 0.5rem;
     }
-} 
+}
+
+/* Add Employee Page Styles */
+.camera-container {
+    max-width: 800px;
+    margin: 0 auto;
+    position: relative;
+}
+
+#cameraPlaceholder {
+    width: 100%;
+    height: 480px;
+    background-color: #f8f9fa;
+    border: 2px dashed #dee2e6;
+    border-radius: 8px;
+}
+
+#cameraFeed {
+    width: 100%;
+    max-height: 480px;
+    object-fit: cover;
+    border-radius: 8px;
+}
+
+.direction-status {
+    padding: 10px;
+    background-color: #f8f9fa;
+    border-radius: 4px;
+    margin: 5px;
+}
+
+.direction-status span {
+    margin-right: 10px;
+}
+
+.progress {
+    height: 20px;
+    margin-top: 10px;
+}
+
+.alert {
+    margin-top: 20px;
+}
+
+/* Face Scanning Styles */
+.camera-wrapper {
+    max-width: 960px;
+    margin: 0 auto;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.camera-container {
+    padding: 20px;
+}
+
+.camera-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+#cameraPlaceholder {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: #f8f9fa;
+    border: 2px dashed #dee2e6;
+}
+
+.video-container {
+    position: relative;
+    width: 100%;
+    background: #000;
+    border-radius: 8px;
+    overflow: hidden;
+    aspect-ratio: 4/3;
+}
+
+#cameraFeed {
+    width: 100%;
+    max-height: 480px;
+    object-fit: cover;
+    display: block;
+}
+
+.direction-status {
+    background: #f8f9fa;
+    padding: 12px;
+    border-radius: 6px;
+    margin: 5px;
+    flex: 1;
+    text-align: center;
+    border: 1px solid #dee2e6;
+    transition: all 0.3s ease;
+}
+
+.direction-status.bg-success {
+    border-color: #28a745;
+}
+
+.direction-status span:first-child {
+    font-weight: bold;
+    margin-right: 10px;
+    color: #495057;
+}
+
+.direction-status.bg-success span {
+    color: white !important;
+}
+
+#scanWarning {
+    margin-top: 1rem;
+    font-weight: 500;
+    animation: warning-flash 2s infinite;
+}
+
+@keyframes warning-flash {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.7; }
+}
+
+.progress {
+    height: 20px;
+    margin: 10px 0;
+}
+
+.progress-bar {
+    transition: width 0.3s ease;
+    animation: progress-bar-stripes 1s linear infinite;
+}
+
+@keyframes progress-bar-stripes {
+    from { background-position: 1rem 0; }
+    to { background-position: 0 0; }
+}
+
+/* Employee Form Styles */
+.card {
+    border: none;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.card-header {
+    background-color: #f8f9fa;
+    border-bottom: 1px solid #dee2e6;
+    padding: 15px 20px;
+}
+
+.card-body {
+    padding: 20px;
+}
+
+.input-group-text {
+    background-color: #f8f9fa;
+    border: 1px solid #dee2e6;
+}
+
+.input-group-text i {
+    width: 16px;
+    text-align: center;
+    color: #6c757d;
+}
