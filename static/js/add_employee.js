@@ -75,29 +75,16 @@ document.addEventListener('DOMContentLoaded', function() {
             const status = await response.json();
             
             if (status.scanning) {
-                // Update direction and frame count
-                document.getElementById('scanDirection').textContent = `Hướng: ${status.current_direction}`;
+                // Update frame count
                 document.getElementById('frameCount').textContent = 
                     `Frames: ${status.frames_captured}/${status.max_frames}`;
                 
                 // Update progress bar
                 const progress = (status.frames_captured / status.max_frames) * 100;
                 document.querySelector('.progress-bar').style.width = `${progress}%`;
-                
-                // Update per-direction progress
-                Object.entries(status.direction_progress).forEach(([direction, count]) => {
-                    const element = document.getElementById(`${direction}Progress`);
-                    if (element) {
-                        element.textContent = `${count}/${status.max_frames}`;
-                        const statusBox = element.closest('.direction-status');
-                        if (count === status.max_frames) {
-                            statusBox.classList.add('completed');
-                        }
-                    }
-                });
             }
             
-            // Check for scan completion regardless of scanning status
+            // Check for scan completion
             if (status.scan_complete) {
                 isScanning = false;
                 

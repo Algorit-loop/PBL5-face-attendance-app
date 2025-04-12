@@ -10,58 +10,43 @@ import onnxruntime
 class FaceScanner:
     def __init__(self):
         self.scanning = False
-        self.current_direction = None
         self.frames_captured = 0
-        self.max_frames = 10
-        self.directions = ['up', 'down', 'left', 'right']
-        self.current_direction_index = 0
+        self.max_frames = 50  # Thay đổi thành 50 frames
         self.employee_id = None
         self.scan_complete = False
         self.warning_message = None
-        # Track progress for each direction
-        self.direction_progress = {
-            'up': 0,
-            'down': 0,
-            'left': 0,
-            'right': 0
-        }
+        self.start_time = None
         
     def start_scan(self, employee_id):
         self.scanning = True
         self.employee_id = employee_id
-        self.current_direction_index = 0
-        self.current_direction = self.directions[0]
         self.frames_captured = 0
         self.scan_complete = False
         self.warning_message = None
-        self.direction_progress = {dir: 0 for dir in self.directions}
+        self.start_time = time.time()
         os.makedirs(os.path.join("face_data", str(employee_id)), exist_ok=True)
         
     def capture_frame(self, frame):
         if not self.scanning:
             return False
             
+        # Check if 2 seconds have passed since start
+        if time.time() - self.start_time < 2:
+            return False
+            
         if self.frames_captured < self.max_frames:
             frame_path = os.path.join(
                 "face_data", 
                 str(self.employee_id), 
-                f"{self.current_direction}_{self.frames_captured + 1:02d}.jpg"
+                f"frame_{self.frames_captured + 1:03d}.jpg"
             )
             if cv2.imwrite(frame_path, frame):
                 self.frames_captured += 1
-                self.direction_progress[self.current_direction] += 1
                 
-                # Check if current direction is complete
+                # Check if scanning is complete
                 if self.frames_captured >= self.max_frames:
-                    # Move to next direction
-                    self.current_direction_index += 1
-                    if self.current_direction_index < len(self.directions):
-                        self.current_direction = self.directions[self.current_direction_index]
-                        self.frames_captured = 0
-                    else:
-                        # All directions complete
-                        self.scanning = False
-                        self.scan_complete = True
+                    self.scanning = False
+                    self.scan_complete = True
                 return True
             return False
         return False
@@ -72,12 +57,11 @@ class FaceScanner:
     def get_status(self):
         return {
             "scanning": self.scanning,
-            "current_direction": self.current_direction,
             "frames_captured": self.frames_captured,
             "max_frames": self.max_frames,
             "scan_complete": self.scan_complete,
             "warning_message": self.warning_message,
-            "direction_progress": self.direction_progress
+            "progress": (self.frames_captured / self.max_frames) * 100
         }
 
 # Load YOLOv8 face model (sử dụng phiên bản nhẹ hơn)
@@ -371,10 +355,6 @@ def scan_frames() -> Generator[bytes, None, None]:
                         
                         # Add scanning overlay
                         if face_scanner.scanning:
-                            # Draw direction instruction
-                            cv2.putText(frame, f"Look {face_scanner.current_direction}",
-                                      (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
-                            
                             # Draw frame count for current direction
                             cv2.putText(frame, 
                                       f"Frames: {face_scanner.frames_captured}/{face_scanner.max_frames}",

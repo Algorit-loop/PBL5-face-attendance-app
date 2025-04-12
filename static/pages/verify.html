@@ -77,7 +77,6 @@
                 <div class="verification-status">
                     <div class="status-box">
                         <p class="status-message" id="statusMessage">Chờ nhận diện nhân viên</p>
-                        <div class="employee-info" id="employeeInfo"></div>
                     </div>
                 </div>
             </div>
@@ -87,10 +86,6 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="/static/js/script.js"></script>
     <script>
-        /**
-         * Verification page functionality
-         */
-        
         // Camera variables
         let cameraActive = false;
         let cameraFeed = null;
@@ -112,8 +107,30 @@
             
             // Check camera status on load
             checkCameraStatus();
+
+            // Add resize handler to maintain aspect ratio on mobile
+            window.addEventListener('resize', adjustCameraHeight);
+            adjustCameraHeight();
+            
+            // Initialize employee info with Unknown values
+            updateEmployeeInfo({
+                id: 'Unknown',
+                name: 'Unknown',
+                department: 'Unknown',
+                time: 'Unknown'
+            });
         });
-        
+
+        // Update employee information
+        function updateEmployeeInfo(data) {
+            const statusMessage = document.getElementById('statusMessage');
+            if (data && data.id && data.name) {
+                statusMessage.textContent = `ID: ${data.id} - Tên: ${data.name}`;
+            } else {
+                statusMessage.textContent = 'Chờ nhận diện nhân viên';
+            }
+        }
+
         // Check camera status
         function checkCameraStatus() {
             fetch('/camera/status')
@@ -197,12 +214,12 @@
         
         // Start capturing frames
         function startCapturing() {
-            // Update camera feed with timestamp to prevent caching
-            cameraFeed.src = '/video_feed?timestamp=' + new Date().getTime();
+            const timestamp = new Date().getTime();
+            cameraFeed.src = `/video_feed?timestamp=${timestamp}&width=960&height=720`;
             
-            // Listen for frame updates to count FPS
             cameraFeed.onload = function() {
                 fpsCounter++;
+                adjustCameraHeight();
             };
         }
         
@@ -221,6 +238,18 @@
             fpsCounter = 0;
             lastFpsUpdate = now;
         }
+
+        // Adjust camera height to maintain aspect ratio
+        function adjustCameraHeight() {
+            const videoContainer = document.querySelector('.video-container');
+            if (window.innerWidth <= 992) {
+                const width = videoContainer.offsetWidth;
+                const height = width * (720 / 960); // Maintain 960x720 aspect ratio
+                videoContainer.style.height = height + 'px';
+            } else {
+                videoContainer.style.height = '720px';
+            }
+        }
     </script>
 </body>
-</html> 
+</html>
