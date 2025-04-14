@@ -1,112 +1,32 @@
 [
   {
-    "id": 2,
-    "full_name": "Trần Thị BBB",
-    "birth_date": "1992-05-15",
-    "email": "tranthib@example.com",
-    "phone": "0987654321",
-    "address": "TP.HCM",
-    "gender": "Nữ",
-    "position": "Quản lý"
-  },
-  {
-    "id": 3,
+    "id": 1,
     "full_name": "Nguyễn Đức Nhã",
-    "birth_date": "0011-11-11",
-    "email": "emloved2004@gmail.com",
-    "phone": "0942488012",
-    "address": "Tx. Quảng Trị",
-    "gender": "Nam",
-    "position": "123213"
-  },
-  {
-    "id": 4,
-    "full_name": "Nguyễn Đức Nhã",
-    "birth_date": "2121-12-31",
-    "email": "admin@japanese-learning.com",
-    "phone": "0942488012",
-    "address": "Tx. Quảng Trị",
-    "gender": "Nam",
-    "position": "123213"
-  },
-  {
-    "id": 5,
-    "full_name": "Nguyễn Đức Nhã",
-    "birth_date": "1131-12-31",
-    "email": "internall1123@gmail.com",
+    "birth_date": "2004-10-02",
+    "email": "admin@gmail.com",
     "phone": "0942488012",
     "address": "Tx. Quảng Trị",
     "gender": "Nam",
     "position": "123"
   },
   {
-    "id": 6,
-    "full_name": "Nguyễn Đức Nhãzzzzzzzzzzz",
-    "birth_date": "13123-12-31",
-    "email": "1213@gmail.com",
-    "phone": "1235412312",
+    "id": 2,
+    "full_name": "Nguyễn Đức Nhã 2",
+    "birth_date": "1111-11-11",
+    "email": "admin@gmail.com1",
+    "phone": "10942488012",
     "address": "Tx. Quảng Trị",
     "gender": "Nam",
-    "position": "123213"
+    "position": "123"
   },
   {
-    "id": 7,
-    "full_name": "Nguyễn Đức Nhã",
-    "birth_date": "1312-12-31",
-    "email": "1213zcz@gmail.com",
-    "phone": "094ee2488012",
-    "address": "Tx. Quảng Trị",
+    "id": 3,
+    "full_name": "aaaaaa",
+    "birth_date": "1321-12-22",
+    "email": "23123@31232131",
+    "phone": "0942488012213123",
+    "address": "Tx. Quảng Trị3123213",
     "gender": "Nam",
-    "position": "3123"
-  },
-  {
-    "id": 8,
-    "full_name": "Tua Thị",
-    "birth_date": "2005-01-09",
-    "email": "htthaoduyenit@gmail.com",
-    "phone": "0333333333",
-    "address": "64 Nguyễn Lương bằng",
-    "gender": "Nữ",
-    "position": "Chủ tịch công ty"
-  },
-  {
-    "id": 10,
-    "full_name": "Nguyễn Đức Nhã11111",
-    "birth_date": "1133-12-31",
-    "email": "admxvcxvcxvxvin@gmail.com",
-    "phone": "0942488012313",
-    "address": "Tx. Quảng Trị",
-    "gender": "Nam",
-    "position": "ádsada"
-  },
-  {
-    "id": 11,
-    "full_name": "conkec",
-    "birth_date": "3131-10-02",
-    "email": "ppp@gmail.com",
-    "phone": "031231231232",
-    "address": "03123123123231231233123123",
-    "gender": "Nam",
-    "position": "xzczxczxc"
-  },
-  {
-    "id": 12,
-    "full_name": "aaaaaaaaaa",
-    "birth_date": "1311-03-13",
-    "email": "aaaaaaaaaaa@asasd",
-    "phone": "23123",
-    "address": "23123231231",
-    "gender": "Nam",
-    "position": "zxczcz"
-  },
-  {
-    "id": 13,
-    "full_name": "ádasd",
-    "birth_date": "1331-12-13",
-    "email": "asdsadascz@fdsfdsf",
-    "phone": "mkasdádsad",
-    "address": "ádsadádád",
-    "gender": "Nữ",
-    "position": "ádasdasd"
+    "position": "123123"
   }
 ]

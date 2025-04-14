@@ -2,6 +2,9 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from typing import List
+import threading
+import subprocess
+import os
 
 from models import Employee
 import routes
@@ -24,7 +27,8 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 @app.on_event("shutdown")
 async def shutdown_event():
     print("Đang giải phóng camera và dọn dẹp...")
-    release_camera()
+    release_camera()  # Đảm bảo rằng hàm release_camera() được định nghĩa ở đâu đó
+
 # Root endpoint
 @app.get("/")
 async def read_root():
@@ -84,3 +88,51 @@ async def get_face_scan_status():
 @app.post("/face-scan/stop")
 async def stop_face_scan():
     return await routes.stop_face_scan()
+
+# Training endpoints
+training_status = {"is_training": False}
+
+@app.post("/train")
+async def train_endpoint():
+    if training_status["is_training"]:
+        return {"status": "training"}
+    training_status["is_training"] = True
+    thread = threading.Thread(target=run_training)
+    thread.start()
+    return {"status": "started"}
+
+@app.get("/train/status")
+async def train_status():
+    return training_status
+
+def run_training():
+    try:
+        print(">>> Đang chạy training.py ...", flush=True)
+        # Sử dụng "source venv/bin/activate && python training.py" với shell=True
+        command = ". venv/bin/activate && python training.py"
+        proc = subprocess.Popen(
+            command,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            shell=True,
+            text=True
+        )
+        # In realtime output
+        while True:
+            print("ccacaacc")
+            line = proc.stdout.readline()
+            if not line:
+                break
+            print(line, flush=True)
+        proc.wait()
+        if proc.returncode != 0:
+            for line in proc.stderr:
+                print(line, flush=True)
+        from camera import Camera
+        Camera.reload_model()
+        print(">>> Model đã được reload", flush=True)
+    except Exception as e:
+        print(f"Training error: {e}", flush=True)
+    finally:
+        training_status["is_training"] = False
+

@@ -26,7 +26,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 cameraStarted = true;
                 
                 // Generate temporary ID for the scanning process
-                const tempId = Date.now().toString();
+                const response = await fetch('/employees');
+                const employees = await response.json();
+                const tempId = employees.length > 0 
+                    ? Math.max(...employees.map(emp => emp.id)) + 1 
+                    : 1;
                 
                 // Start face scanning
                 const scanResponse = await fetch(`/face-scan/start/${tempId}`, {
@@ -143,7 +147,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (response.ok) {
                     showToast('Thêm nhân viên thành công!', 'success');
                     setTimeout(() => {
-                        window.location.href = '/static/pages/employees.html';
+                        window.location.href = '/static/pages/employees.html?train=true';
                     }, 1500);
                 } else {
                     const result = await response.json();

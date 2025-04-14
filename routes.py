@@ -5,6 +5,7 @@ from typing import List
 from models import Employee
 import database
 import camera
+from employeecontroller import EmployeeController
 
 # Root endpoint
 async def read_root():
@@ -90,130 +91,16 @@ async def stop_face_scan():
 
 # Employee endpoints
 async def get_employees():
-    """
-    Get all employees
-    
-    Returns:
-        List of all employees
-    """
-    return database.employees
+    return await EmployeeController.get_all()
 
 async def get_employee(employee_id: int):
-    """
-    Get employee by ID
-    
-    Args:
-        employee_id: ID of the employee to get
-        
-    Returns:
-        Employee data
-        
-    Raises:
-        HTTPException: If employee not found
-    """
-    employee = next((emp for emp in database.employees if emp["id"] == employee_id), None)
-    if not employee:
-        raise HTTPException(status_code=404, detail="Không tìm thấy nhân viên")
-    return employee
+    return await EmployeeController.get_by_id(employee_id)
 
 async def create_employee(employee: Employee):
-    """
-    Create a new employee
-    
-    Args:
-        employee: Employee data to create
-        
-    Returns:
-        Created employee data
-        
-    Raises:
-        HTTPException: If validation fails
-    """
-    try:
-        # Check for duplicate email
-        if any(emp["email"] == employee.email for emp in database.employees):
-            raise HTTPException(
-                status_code=400,
-                detail="Email đã tồn tại trong hệ thống"
-            )
-            
-        # Check for duplicate phone
-        if any(emp["phone"] == employee.phone for emp in database.employees):
-            raise HTTPException(
-                status_code=400,
-                detail="Số điện thoại đã tồn tại trong hệ thống"
-            )
-            
-        new_id = max(emp["id"] for emp in database.employees) + 1 if database.employees else 1
-        employee_dict = employee.dict()
-        employee_dict["id"] = new_id
-        database.employees.append(employee_dict)
-        database.save_employees(database.employees)
-        return employee_dict
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
+    return await EmployeeController.create(employee)
 
 async def update_employee(employee_id: int, employee: Employee):
-    """
-    Update an existing employee
-    
-    Args:
-        employee_id: ID of the employee to update
-        employee: Updated employee data
-        
-    Returns:
-        Updated employee data
-        
-    Raises:
-        HTTPException: If employee not found or validation fails
-    """
-    try:
-        existing_employee = next((i for i, emp in enumerate(database.employees) if emp["id"] == employee_id), None)
-        if existing_employee is None:
-            raise HTTPException(
-                status_code=404,
-                detail="Không tìm thấy nhân viên"
-            )
-        
-        # Check for duplicate email, excluding current employee
-        if any(emp["email"] == employee.email and emp["id"] != employee_id for emp in database.employees):
-            raise HTTPException(
-                status_code=400,
-                detail="Email đã tồn tại trong hệ thống"
-            )
-            
-        # Check for duplicate phone, excluding current employee
-        if any(emp["phone"] == employee.phone and emp["id"] != employee_id for emp in database.employees):
-            raise HTTPException(
-                status_code=400,
-                detail="Số điện thoại đã tồn tại trong hệ thống"
-            )
-            
-        employee_dict = employee.dict()
-        employee_dict["id"] = employee_id
-        database.employees[existing_employee] = employee_dict
-        database.save_employees(database.employees)
-        return employee_dict
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
+    return await EmployeeController.update(employee_id, employee)
 
 async def delete_employee(employee_id: int):
-    """
-    Delete an employee
-    
-    Args:
-        employee_id: ID of the employee to delete
-        
-    Returns:
-        Success message
-        
-    Raises:
-        HTTPException: If employee not found
-    """
-    employee_index = next((i for i, emp in enumerate(database.employees) if emp["id"] == employee_id), None)
-    if employee_index is None:
-        raise HTTPException(status_code=404, detail="Không tìm thấy nhân viên")
-    
-    database.employees.pop(employee_index)
-    database.save_employees(database.employees)
-    return {"message": "Đã xóa nhân viên thành công"}
+    return await EmployeeController.delete(employee_id)
