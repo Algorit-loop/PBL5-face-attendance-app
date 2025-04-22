@@ -1,32 +1,12 @@
 [
   {
     "id": 1,
-    "full_name": "Nguyễn Đức Nhã",
-    "birth_date": "2004-10-02",
-    "email": "admin@gmail.com",
-    "phone": "0942488012",
-    "address": "Tx. Quảng Trị",
+    "full_name": "Võ Quốc Hiếu",
+    "birth_date": "2004-03-03",
+    "email": "timapyugioh@gmail.com",
+    "phone": "0375535008",
+    "address": "48 NSL",
     "gender": "Nam",
-    "position": "123"
-  },
-  {
-    "id": 2,
-    "full_name": "Nguyễn Đức Nhã 2",
-    "birth_date": "1111-11-11",
-    "email": "admin@gmail.com1",
-    "phone": "10942488012",
-    "address": "Tx. Quảng Trị",
-    "gender": "Nam",
-    "position": "123"
-  },
-  {
-    "id": 3,
-    "full_name": "aaaaaa",
-    "birth_date": "1321-12-22",
-    "email": "23123@31232131",
-    "phone": "0942488012213123",
-    "address": "Tx. Quảng Trị3123213",
-    "gender": "Nam",
-    "position": "123123"
+    "position": "Tạp vụ"
   }
 ]

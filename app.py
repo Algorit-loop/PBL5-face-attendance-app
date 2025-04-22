@@ -109,7 +109,7 @@ def run_training():
     try:
         print(">>> Đang chạy training.py ...", flush=True)
         # Sử dụng "source venv/bin/activate && python training.py" với shell=True
-        command = ". venv/bin/activate && python training.py"
+        command = "python training.py"
         proc = subprocess.Popen(
             command,
             stdout=subprocess.PIPE,

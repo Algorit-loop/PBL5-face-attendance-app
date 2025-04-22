@@ -139,7 +139,7 @@ def init_camera() -> bool:
     global camera, camera_running
     try:
         if camera is None:
-            camera = cv2.VideoCapture(0)
+            camera = cv2.VideoCapture("http://172.20.10.3:81/stream")
             if not camera.isOpened():
                 raise Exception("Không thể mở camera")
             camera_running = True
