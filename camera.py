@@ -10,6 +10,9 @@ import asyncio
 from employeecontroller import EmployeeController  # Changed import
 import joblib
 
+import arduino_controller
+door_opened = False
+
 class FaceScanner:
     def __init__(self):
         self.scanning = False
@@ -228,7 +231,7 @@ def yolo_r50_inference(original_frame: np.ndarray, yolo_frame: np.ndarray) -> No
     model R50 trên mỗi khuôn mặt được phát hiện, dùng hệ số scale để chuyển tọa độ sang original_frame.
     Dự đoán id_user bằng SVM với ngưỡng xác suất 0.7, lưu vào kết quả.
     """
-    global global_result, processing
+    global global_result, processing, door_opened
     try:
         start_time = time.time()  # Ghi lại thời gian bắt đầu
         
@@ -241,7 +244,18 @@ def yolo_r50_inference(original_frame: np.ndarray, yolo_frame: np.ndarray) -> No
         # Tính scaling factors từ khung hình YOLO đến original_frame
         scale_x = original_frame.shape[1] / yolo_frame.shape[1]
         scale_y = original_frame.shape[0] / yolo_frame.shape[0]
-        
+
+        if res.boxes is not None and len(res.boxes) > 0:
+            arduino_controller.shine_led()
+            if not door_opened:
+                arduino_controller.open_door()
+                door_opened = True  
+        else:
+            arduino_controller.off_led()
+            if door_opened:
+                arduino_controller.close_door()
+                door_opened = False
+
         # Duyệt qua từng bounding box
         for box in res.boxes:
             # Lấy tọa độ (trên khung hình yolo_frame)

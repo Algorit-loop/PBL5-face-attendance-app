@@ -1,0 +1,2 @@
+import arduino_controller
+arduino_controller.open_door()

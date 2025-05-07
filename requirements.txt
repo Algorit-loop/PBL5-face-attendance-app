@@ -3,3 +3,7 @@ uvicorn
 opencv-python
 onnxruntime
 ultralytics
+python-multipart
+pydantic
+numpy
+pyserial

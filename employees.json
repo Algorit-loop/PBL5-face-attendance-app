@@ -2,9 +2,19 @@
   {
     "id": 1,
     "full_name": "Võ Quốc Hiếu",
-    "birth_date": "2004-03-03",
+    "birth_date": "2025-05-05",
     "email": "timapyugioh@gmail.com",
     "phone": "0375535008",
+    "address": "48 NSL",
+    "gender": "Nam",
+    "position": "Tạp vụ"
+  },
+  {
+    "id": 2,
+    "full_name": "Võ Quốc Minh",
+    "birth_date": "2025-05-03",
+    "email": "102220017@sv1.dut.udn.vn",
+    "phone": "03755350009",
     "address": "48 NSL",
     "gender": "Nam",
     "position": "Tạp vụ"
