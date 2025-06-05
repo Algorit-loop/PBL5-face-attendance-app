@@ -46,7 +46,9 @@ class FaceScanner:
                 str(self.employee_id), 
                 f"frame_{self.frames_captured + 1:03d}.jpg"
             )
-            if cv2.imwrite(frame_path, frame):
+            # Use lower quality JPEG to speed up I/O
+            encode_params = [cv2.IMWRITE_JPEG_QUALITY, 85]  # Reduced from default 95
+            if cv2.imwrite(frame_path, frame, encode_params):
                 self.frames_captured += 1
                 
                 # Check if scanning is complete
@@ -131,7 +133,8 @@ height = 720
 camera = None
 camera_running = False
 last_frame_time = 0
-frame_interval = 1/60  # mục tiêu 60 FPS
+frame_interval = 1/30  # Realistic 30 FPS target
+inference_interval = 1/10  # Process AI inference every 10th frame (3 times per second)
 
 # Global variables cho xử lý bất đồng bộ
 global_result = None  # Kết quả YOLO (và sau đó có thể gồm thêm thông tin của R50)
@@ -207,12 +210,19 @@ def update_employee_mapping():
     """Update the employee ID to name mapping"""
     global employee_dict
     try:
-        # Get employees using EmployeeController
-        employees = asyncio.run(EmployeeController.get_all())
-        employee_dict = {str(emp["id"]): emp["full_name"] for emp in employees}
-        print(f"Updated employee mapping with {len(employee_dict)} employees")
+        # Use threading to avoid blocking
+        def _update():
+            try:
+                employees = asyncio.run(EmployeeController.get_all())
+                employee_dict.update({str(emp["id"]): emp["full_name"] for emp in employees})
+                print(f"Updated employee mapping with {len(employee_dict)} employees")
+            except Exception as e:
+                print(f"Error updating employee mapping: {str(e)}")
+        
+        thread = threading.Thread(target=_update, daemon=True)
+        thread.start()
     except Exception as e:
-        print(f"Error updating employee mapping: {str(e)}")
+        print(f"Error starting employee mapping update: {str(e)}")
 
 # Initial update of employee mapping
 update_employee_mapping()
@@ -225,31 +235,106 @@ class Camera:
         load_models()
         update_employee_mapping()
 
+def scan_yolo_inference(original_frame: np.ndarray, yolo_frame: np.ndarray) -> None:
+    """
+    Optimized YOLO inference for face scanning (registration mode)
+    """
+    global global_result, processing, face_scanner
+    try:
+        # Run YOLO inference with reduced verbosity
+        res = model(yolo_frame, verbose=False)[0]
+        
+        # Early exit if no faces detected
+        if res.boxes is None or len(res.boxes) == 0:
+            global_result = []
+            processing = False
+            return
+        
+        # Calculate scaling factors
+        scale_x = original_frame.shape[1] / yolo_frame.shape[1]
+        scale_y = original_frame.shape[0] / yolo_frame.shape[0]
+        
+        # Create results for UI display
+        custom_results = []
+        num_faces = len(res.boxes)
+        
+        # Handle face scanning logic
+        if face_scanner.scanning:
+            if num_faces == 0:
+                face_scanner.set_warning("Không tìm thấy khuôn mặt")
+            elif num_faces > 1:
+                face_scanner.set_warning("Phát hiện nhiều khuôn mặt! Vui lòng chỉ để một người trong khung hình")
+            else:
+                face_scanner.set_warning(None)
+                # Get the single face detected
+                face_box = res.boxes[0]
+                x1, y1, x2, y2 = map(int, face_box.xyxy[0])
+                
+                # Scale coordinates to original frame size
+                x1_scaled = int(x1 * scale_x)
+                y1_scaled = int(y1 * scale_y)
+                x2_scaled = int(x2 * scale_x)
+                y2_scaled = int(y2 * scale_y)
+                
+                # Extract and save face asynchronously
+                face_img = original_frame[y1_scaled:y2_scaled, x1_scaled:x2_scaled]
+                if face_img.size > 0:
+                    # Use threading for file I/O to avoid blocking
+                    def save_face():
+                        face_scanner.capture_frame(face_img)
+                    
+                    save_thread = threading.Thread(target=save_face, daemon=True)
+                    save_thread.start()
+        
+        # Create display results
+        for box in res.boxes:
+            x1, y1, x2, y2 = map(int, box.xyxy[0])
+            conf = float(box.conf[0])
+            
+            custom_results.append({
+                'xyxy': [x1, y1, x2, y2],
+                'conf': conf,
+                'id_user': "Scanning",
+                'name': "Face Detected"
+            })
+        
+        global_result = custom_results
+        
+    except Exception as e:
+        print(f"Lỗi khi chạy scan inference: {str(e)}")
+    processing = False
+
 def yolo_r50_inference(original_frame: np.ndarray, yolo_frame: np.ndarray) -> None:
     """
-    Hàm chạy inference của YOLO trên yolo_frame (ví dụ 640x640) và sau đó thực hiện inference
-    model R50 trên mỗi khuôn mặt được phát hiện, dùng hệ số scale để chuyển tọa độ sang original_frame.
-    Dự đoán id_user bằng SVM với ngưỡng xác suất 0.7, lưu vào kết quả.
+    Optimized inference function with early exit and reduced verbosity
     """
     global global_result, processing, door_opened
     try:
-        start_time = time.time()  # Ghi lại thời gian bắt đầu
+        start_time = time.time()
         
-        # Chạy inference YOLO trên yolo_frame
-        res = model(yolo_frame, verbose=True)[0]
+        # Run YOLO inference with reduced verbosity
+        res = model(yolo_frame, verbose=False)[0]
         
-        # Tạo danh sách để lưu kết quả tùy chỉnh
+        # Early exit if no faces detected
+        if res.boxes is None or len(res.boxes) == 0:
+            arduino_controller.off_led()
+            if door_opened:
+                arduino_controller.close_door()
+                door_opened = False
+            global_result = []
+            processing = False
+            return
+        
+        # Create custom results list
         custom_results = []
         
-        # Tính scaling factors từ khung hình YOLO đến original_frame
+        # Calculate scaling factors
         scale_x = original_frame.shape[1] / yolo_frame.shape[1]
         scale_y = original_frame.shape[0] / yolo_frame.shape[0]
-
-        if res.boxes is not None and len(res.boxes) > 0:
-            arduino_controller.shine_led()
-            if not door_opened:
-                arduino_controller.open_door()
-                door_opened = True  
+        arduino_controller.shine_led()
+        if not door_opened:
+            arduino_controller.open_door()
+            door_opened = True  
         else:
             arduino_controller.off_led()
             if door_opened:
@@ -268,9 +353,9 @@ def yolo_r50_inference(original_frame: np.ndarray, yolo_frame: np.ndarray) -> No
             x2_scaled = int(x2 * scale_x)
             y2_scaled = int(y2 * scale_y)
             
-            # Crop khuôn mặt từ original_frame
+            # Crop face with size validation
             face_crop = original_frame[y1_scaled:y2_scaled, x1_scaled:x2_scaled]
-            if face_crop.size > 0:
+            if face_crop.size > 0 and face_crop.shape[0] > 32 and face_crop.shape[1] > 32:  # Minimum face size check
                 # Trích xuất embedding bằng R50
                 embedding = process_with_R50(face_crop)
                 print("Embedding vector từ model R50:", embedding.shape)
@@ -348,8 +433,8 @@ def generate_frames() -> Generator[bytes, None, None]:
                         yolo_frame = cv2.resize(frame, (640, 640))
                         
                         frame_count += 1
-                        # Chạy inference nếu không có thread nào đang xử lý
-                        if frame_count % 1 == 0 and not processing:
+                        # Run inference less frequently to improve performance
+                        if frame_count % 3 == 0 and not processing:  # Every 3rd frame instead of every frame
                             processing = True
                             thread = threading.Thread(target=yolo_r50_inference,
                                                     args=(frame.copy(), yolo_frame.copy()))
@@ -423,45 +508,23 @@ def scan_frames() -> Generator[bytes, None, None]:
                         # Create YOLO input frame
                         yolo_frame = cv2.resize(frame, (640, 640))
                         
-                        # Run YOLO inference for face detection
-                        if frame_count % 1 == 0 and not processing:
+                        # Run YOLO inference less frequently in scan mode
+                        if frame_count % 4 == 0 and not processing:  # Every 4th frame (was 2nd)
                             processing = True
-                            results = model(yolo_frame, verbose=True)[0]
-                            processing = False
+                            thread = threading.Thread(target=scan_yolo_inference,
+                                                    args=(frame.copy(), yolo_frame.copy()))
+                            thread.daemon = True
+                            thread.start()
                             
-                            # Check number of faces detected
-                            num_faces = len(results.boxes)
+                            # Use global_result from asynchronous inference
+                        if global_result is not None:
+                            scale_x = width / 640
+                            scale_y = height / 640
+                            num_faces = len(global_result)
                             
-                            # If scanning is active, handle face detection results
-                            if face_scanner.scanning:
-                                if num_faces == 0:
-                                    face_scanner.set_warning("Không tìm thấy khuôn mặt")
-                                elif num_faces > 1:
-                                    face_scanner.set_warning("Phát hiện nhiều khuôn mặt! Vui lòng chỉ để một người trong khung hình")
-                                    
-                                else:
-                                    face_scanner.set_warning(None)
-                                    # Get the single face detected
-                                    face_box = results.boxes[0]
-                                    x1, y1, x2, y2 = map(int, face_box.xyxy[0])
-                                    
-                                    # Scale coordinates to original frame size
-                                    scale_x = width / 640
-                                    scale_y = height / 640
-                                    x1_scaled = int(x1 * scale_x)
-                                    y1_scaled = int(y1 * scale_y)
-                                    x2_scaled = int(x2 * scale_x)
-                                    y2_scaled = int(y2 * scale_y)
-                                    
-                                    # Extract and save face only if one face is detected
-                                    face_img = frame[y1_scaled:y2_scaled, x1_scaled:x2_scaled]
-                                    if face_img.size > 0:
-                                        face_scanner.capture_frame(face_img)
-                            
-                            # Draw face rectangles and status
-                            for box in results.boxes:
-                                x1, y1, x2, y2 = map(int, box.xyxy[0])
-                                conf = float(box.conf[0])
+                            for result in global_result:
+                                x1, y1, x2, y2 = map(int, result['xyxy'])
+                                conf = result['conf']
                                 
                                 # Scale coordinates
                                 x1_scaled = int(x1 * scale_x)

@@ -1,2 +1,2 @@
 import arduino_controller
-arduino_controller.open_door()
+arduino_controller.close_door()

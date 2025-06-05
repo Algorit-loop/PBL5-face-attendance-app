@@ -23,13 +23,13 @@ void loop() {
     }
     else if (data == 'o') {
       // Open door: 
-      for (pos = 90; pos >= 0; pos--) {
+      for (pos = 0; pos <= 90; pos++) {
         myServo.write(pos);
         delay(15);
       }
     }
     else if (data == 'c') {
-      for (pos = 0; pos <= 90; pos++) {
+      for (pos = 90; pos >= 0; pos--) {
         myServo.write(pos);
         delay(15);
       }
