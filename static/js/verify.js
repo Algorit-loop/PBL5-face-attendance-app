@@ -12,12 +12,17 @@ let lastFpsUpdate = Date.now();
 const targetWidth = 960;
 const targetHeight = 720;
 
+// Attendance functionality
+let employeeSelect = document.getElementById('employeeSelect');
+let checkInBtn = document.getElementById('checkInBtn');
+let checkOutBtn = document.getElementById('checkOutBtn');
+let attendanceTableBody = document.getElementById('attendanceTableBody');
+
 // Initialize verification page
 document.addEventListener('DOMContentLoaded', function() {
     // Get DOM elements
-    cameraFeed = document.getElementById('camera-feed');
+    cameraFeed = document.getElementById('videoFeed');
     const toggleCameraBtn = document.getElementById('toggleCamera');
-    const cameraSpinner = document.getElementById('cameraSpinner');
     
     // Add event listeners
     toggleCameraBtn.addEventListener('click', toggleCamera);
@@ -25,90 +30,203 @@ document.addEventListener('DOMContentLoaded', function() {
     // Update FPS counter every second
     setInterval(updateFps, 1000);
     
-    // Check for verification status updates
-    setInterval(checkVerificationStatus, 2000);
+    // Check camera status on load
+    checkCameraStatus();
+
+    // Add resize handler to maintain aspect ratio on mobile
+    window.addEventListener('resize', adjustCameraHeight);
+    adjustCameraHeight();
+    
+    // Initialize attendance functionality
+    loadEmployees();
+    loadTodayAttendance();
+    
+    // Refresh attendance table every minute
+    setInterval(loadTodayAttendance, 60000);
 });
+
+// Load employees into select dropdown
+async function loadEmployees() {
+    try {
+        const response = await fetch('/employees');
+        const employees = await response.json();
+        
+        employeeSelect.innerHTML = '<option value="">-- Chọn nhân viên --</option>';
+        employees.forEach(employee => {
+            const option = document.createElement('option');
+            option.value = employee.id;
+            option.textContent = employee.full_name;
+            employeeSelect.appendChild(option);
+        });
+    } catch (error) {
+        console.error('Error loading employees:', error);
+    }
+}
+
+// Load today's attendance
+async function loadTodayAttendance() {
+    try {
+        const today = new Date().toISOString().split('T')[0];
+        const response = await fetch(`/api/attendance?date=${today}`);
+        const result = await response.json();
+        
+        if (result.success) {
+            displayAttendance(result.data);
+        } else {
+            console.error('Error loading attendance:', result.message);
+        }
+    } catch (error) {
+        console.error('Error loading attendance:', error);
+    }
+}
+
+// Display attendance records in table
+function displayAttendance(records) {
+    const attendanceTableBody = document.getElementById('attendanceTableBody');
+    attendanceTableBody.innerHTML = '';
+    
+    if (records.length === 0) {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td colspan="3" class="text-center">Chưa có dữ liệu điểm danh hôm nay</td>
+        `;
+        attendanceTableBody.appendChild(row);
+        return;
+    }
+    
+    // Group records by employee
+    const employeeRecords = {};
+    records.forEach(record => {
+        if (!employeeRecords[record.employee_id]) {
+            employeeRecords[record.employee_id] = {
+                name: record.employee_name || 'Unknown',
+                check_in: null,
+                check_out: null
+            };
+        }
+        
+        if (record.check_type === 'in') {
+            employeeRecords[record.employee_id].check_in = record.time;
+        } else {
+            employeeRecords[record.employee_id].check_out = record.time;
+        }
+    });
+    
+    // Create table rows
+    Object.entries(employeeRecords).forEach(([employeeId, record]) => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td>${record.name}</td>
+            <td>${record.check_in || '-'}</td>
+            <td>${record.check_out || '-'}</td>
+        `;
+        attendanceTableBody.appendChild(row);
+    });
+}
+
+// Record attendance
+async function recordAttendance(employeeId, checkType) {
+    try {
+        const response = await fetch(`/api/attendance/record?employee_id=${employeeId}&check_type=${checkType}`, {
+            method: 'POST'
+        });
+        const result = await response.json();
+        
+        if (result.success) {
+            // Reload attendance table
+            await loadTodayAttendance();
+            // Show success message
+            alert(`Điểm danh ${checkType === 'in' ? 'check-in' : 'check-out'} thành công!`);
+        } else {
+            alert(result.message || 'Có lỗi xảy ra khi điểm danh');
+        }
+    } catch (error) {
+        console.error('Error recording attendance:', error);
+        alert('Có lỗi xảy ra khi điểm danh');
+    }
+}
+
+// Add event listeners for manual attendance
+checkInBtn.addEventListener('click', () => {
+    const employeeId = employeeSelect.value;
+    if (!employeeId) {
+        alert('Vui lòng chọn nhân viên');
+        return;
+    }
+    recordAttendance(employeeId, 'in');
+});
+
+checkOutBtn.addEventListener('click', () => {
+    const employeeId = employeeSelect.value;
+    if (!employeeId) {
+        alert('Vui lòng chọn nhân viên');
+        return;
+    }
+    recordAttendance(employeeId, 'out');
+});
+
+// Check camera status
+function checkCameraStatus() {
+    fetch('/camera/status')
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'on') {
+                cameraActive = true;
+                updateCameraUI(true);
+                startCapturing();
+            }
+        })
+        .catch(error => {
+            console.error('Error checking camera status:', error);
+        });
+}
 
 // Toggle camera on/off
 function toggleCamera() {
     const toggleCameraBtn = document.getElementById('toggleCamera');
-    const toggleCameraText = document.getElementById('toggleCameraText');
-    const cameraSpinner = document.getElementById('cameraSpinner');
-    const cameraStatus = document.getElementById('cameraStatus');
     
-    if (!cameraActive) {
-        // Turn camera on
-        toggleCameraText.textContent = 'Tắt';
-        cameraStatus.textContent = 'Đang khởi động';
-        cameraStatus.style.color = '#ffc107'; // warning color
-        cameraSpinner.style.display = 'block';
-        
-        // Start video stream
-        fetch('/start_camera', { method: 'POST' })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    cameraActive = true;
-                    cameraStatus.textContent = 'Đang hoạt động';
-                    cameraStatus.style.color = '#28a745'; // success color
-                    
-                    // Start capturing frames
-                    startCapturing();
-                } else {
-                    showToast('Không thể khởi động camera: ' + data.error, 'error');
-                    resetCameraUI();
-                }
-            })
-            .catch(error => {
-                showToast('Lỗi kết nối: ' + error.message, 'error');
-                resetCameraUI();
-            })
-            .finally(() => {
-                cameraSpinner.style.display = 'none';
-            });
-    } else {
-        // Turn camera off
-        cameraActive = false;
-        resetCameraUI();
-        
-        fetch('/stop_camera', { method: 'POST' })
-            .catch(error => {
-                console.error('Error stopping camera:', error);
-            });
-    }
+    // Toggle camera via API
+    fetch('/camera/toggle', { method: 'POST' })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'on') {
+                cameraActive = true;
+                updateCameraUI(true);
+                startCapturing();
+            } else {
+                cameraActive = false;
+                updateCameraUI(false);
+            }
+        })
+        .catch(error => {
+            console.error('Error toggling camera:', error);
+            cameraActive = false;
+            updateCameraUI(false);
+        });
 }
 
-// Reset camera UI to default state
-function resetCameraUI() {
-    const toggleCameraText = document.getElementById('toggleCameraText');
-    const cameraStatus = document.getElementById('cameraStatus');
-    const resolutionDisplay = document.getElementById('resolution');
-    const fpsDisplay = document.getElementById('fps');
+// Update camera UI based on status
+function updateCameraUI(isActive) {
+    const toggleCameraBtn = document.getElementById('toggleCamera');
     
-    toggleCameraText.textContent = 'Bật';
-    cameraStatus.textContent = 'Đang tắt';
-    cameraStatus.style.color = '#dc3545'; // danger color
-    resolutionDisplay.textContent = 'Chưa khởi động';
-    fpsDisplay.textContent = 'Chưa khởi động';
-    
-    // Clear the camera feed
-    if (cameraFeed.src && cameraFeed.src !== '') {
-        cameraFeed.src = '';
+    if (isActive) {
+        toggleCameraBtn.innerHTML = '<i class="fas fa-camera"></i> Tắt Camera';
+    } else {
+        toggleCameraBtn.innerHTML = '<i class="fas fa-camera"></i> Bật Camera';
+        if (cameraFeed.src) {
+            cameraFeed.src = '';
+        }
     }
 }
 
 // Start capturing frames
 function startCapturing() {
-    // Update camera feed with timestamp to prevent caching
-    cameraFeed.src = '/video_feed?timestamp=' + new Date().getTime();
+    const timestamp = new Date().getTime();
+    cameraFeed.src = `/video_feed?timestamp=${timestamp}`;
     
-    // Set resolution info
-    const resolutionDisplay = document.getElementById('resolution');
-    resolutionDisplay.textContent = `${targetWidth}x${targetHeight}`;
-    
-    // Listen for frame updates to count FPS
     cameraFeed.onload = function() {
         fpsCounter++;
+        adjustCameraHeight();
     };
 }
 
@@ -120,52 +238,19 @@ function updateFps() {
     const elapsed = (now - lastFpsUpdate) / 1000;
     const fps = Math.round(fpsCounter / elapsed);
     
-    const fpsDisplay = document.getElementById('fps');
-    fpsDisplay.textContent = `${fps}`;
-    
     // Reset counter
     fpsCounter = 0;
     lastFpsUpdate = now;
 }
 
-// Check for verification status updates
-function checkVerificationStatus() {
-    if (!cameraActive) return;
-    
-    fetch('/verification_status')
-        .then(response => response.json())
-        .then(data => {
-            updateVerificationUI(data);
-        })
-        .catch(error => {
-            console.error('Error checking verification status:', error);
-        });
-}
-
-// Update verification UI based on status data
-function updateVerificationUI(data) {
-    const statusMessage = document.getElementById('statusMessage');
-    const employeeInfo = document.getElementById('employeeInfo');
-    
-    if (data.verified) {
-        statusMessage.textContent = 'Nhân viên đã được xác nhận';
-        statusMessage.style.color = '#28a745'; // success color
-        
-        // Display employee info
-        if (data.employee) {
-            employeeInfo.innerHTML = `
-                <p><strong>ID:</strong> ${data.employee.id}</p>
-                <p><strong>Họ tên:</strong> ${data.employee.name}</p>
-                <p><strong>Thời gian:</strong> ${new Date().toLocaleTimeString('vi-VN')}</p>
-            `;
-        }
-    } else if (data.processing) {
-        statusMessage.textContent = 'Đang xử lý...';
-        statusMessage.style.color = '#ffc107'; // warning color
-        employeeInfo.innerHTML = '';
+// Adjust camera height to maintain aspect ratio
+function adjustCameraHeight() {
+    const cameraFrame = document.querySelector('.camera-frame');
+    if (window.innerWidth <= 992) {
+        const width = cameraFrame.offsetWidth;
+        const height = width * (720 / 960); // Maintain 960x720 aspect ratio
+        cameraFrame.style.height = height + 'px';
     } else {
-        statusMessage.textContent = 'Chờ nhận diện nhân viên';
-        statusMessage.style.color = '#6c757d'; // secondary color
-        employeeInfo.innerHTML = '';
+        cameraFrame.style.height = '720px';
     }
 } 

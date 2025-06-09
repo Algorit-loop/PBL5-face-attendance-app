@@ -9,6 +9,8 @@ import onnxruntime
 import asyncio
 from employeecontroller import EmployeeController  # Changed import
 import joblib
+from attendance_controller import AttendanceController
+from datetime import datetime
 
 import arduino_controller
 door_opened = False
@@ -140,6 +142,16 @@ inference_interval = 1/10  # Process AI inference every 10th frame (3 times per 
 global_result = None  # Kết quả YOLO (và sau đó có thể gồm thêm thông tin của R50)
 processing = False    # Cờ báo trạng thái inference đang chạy hay không
 frame_count = 0       # Đếm số frame
+
+# Door control variables
+door_opened = False
+last_door_open_time = 0
+DOOR_OPEN_DURATION = 5  # Door stays open for 5 seconds
+DOOR_COOLDOWN = 3      # 3 seconds cooldown before allowing another open
+
+# Track last check-in/out time for each employee
+last_check_time = {}
+CHECK_INTERVAL = 2  # Minimum seconds between check-in/out (changed from 60 to 2)
 
 def init_camera() -> bool:
     global camera, camera_running
@@ -308,9 +320,10 @@ def yolo_r50_inference(original_frame: np.ndarray, yolo_frame: np.ndarray) -> No
     """
     Optimized inference function with early exit and reduced verbosity
     """
-    global global_result, processing, door_opened
+    global global_result, processing, door_opened, last_door_open_time, last_check_time
     try:
         start_time = time.time()
+        current_time = time.time()
         
         # Run YOLO inference with reduced verbosity
         res = model(yolo_frame, verbose=False)[0]
@@ -318,7 +331,8 @@ def yolo_r50_inference(original_frame: np.ndarray, yolo_frame: np.ndarray) -> No
         # Early exit if no faces detected
         if res.boxes is None or len(res.boxes) == 0:
             arduino_controller.off_led()
-            if door_opened:
+            # Only close door if it's been open for the minimum duration
+            if door_opened and (current_time - last_door_open_time) >= DOOR_OPEN_DURATION:
                 arduino_controller.close_door()
                 door_opened = False
             global_result = []
@@ -332,14 +346,15 @@ def yolo_r50_inference(original_frame: np.ndarray, yolo_frame: np.ndarray) -> No
         scale_x = original_frame.shape[1] / yolo_frame.shape[1]
         scale_y = original_frame.shape[0] / yolo_frame.shape[0]
         arduino_controller.shine_led()
-        if not door_opened:
+        
+        # Door control logic
+        if not door_opened and (current_time - last_door_open_time) >= DOOR_COOLDOWN:
             arduino_controller.open_door()
-            door_opened = True  
-        else:
-            arduino_controller.off_led()
-            if door_opened:
-                arduino_controller.close_door()
-                door_opened = False
+            door_opened = True
+            last_door_open_time = current_time
+        elif door_opened and (current_time - last_door_open_time) >= DOOR_OPEN_DURATION:
+            arduino_controller.close_door()
+            door_opened = False
 
         # Duyệt qua từng bounding box
         for box in res.boxes:
@@ -379,6 +394,37 @@ def yolo_r50_inference(original_frame: np.ndarray, yolo_frame: np.ndarray) -> No
                         # Use the employee dictionary to get the name
                         print(f"Predicted id_user: {id_user}")
                         name = employee_dict.get(str(id_user), "Unknown")
+                        
+                        # Handle attendance recording
+                        if id_user != "Unknown":
+                            # Check if enough time has passed since last check
+                            last_time = last_check_time.get(id_user, 0)
+                            if current_time - last_time >= CHECK_INTERVAL:
+                                # Determine if it's check-in or check-out based on time
+                                current_hour = datetime.now().hour
+                                check_type = "in" if current_hour < 12 else "out"
+                                
+                                # Record attendance asynchronously
+                                async def record_attendance_async():
+                                    try:
+                                        result = await AttendanceController.record_attendance(str(id_user), check_type)
+                                        if result["success"]:
+                                            last_check_time[id_user] = current_time
+                                            print(f"Recorded {check_type} for {name} at {result['time']}")
+                                            # Force reload attendance table
+                                            try:
+                                                response = await fetch('/api/attendance?date=' + datetime.now().strftime('%Y-%m-%d'))
+                                                if response.ok:
+                                                    print("Attendance table updated successfully")
+                                            except Exception as e:
+                                                print(f"Error updating attendance table: {str(e)}")
+                                    except Exception as e:
+                                        print(f"Error recording attendance: {str(e)}")
+                                
+                                # Run attendance recording in a separate thread
+                                thread = threading.Thread(target=lambda: asyncio.run(record_attendance_async()))
+                                thread.daemon = True
+                                thread.start()
                     else:
                         id_user = "Unknown"
                         name = "Unknown"

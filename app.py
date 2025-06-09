@@ -1,13 +1,15 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from typing import List
+from typing import List, Optional
 import threading
 import subprocess
 import os
+from datetime import datetime
 
 from models import Employee
 import routes
+from attendance_controller import AttendanceController
 
 # Create FastAPI app
 app = FastAPI(title="Hệ thống điểm danh", description="API cho hệ thống điểm danh nhân viên")
@@ -104,6 +106,38 @@ async def train_endpoint():
 @app.get("/train/status")
 async def train_status():
     return training_status
+
+# Attendance endpoints
+@app.get("/api/attendance")
+async def get_attendance(employee_id: Optional[str] = None, date: Optional[str] = None):
+    """
+    Get attendance records with optional filtering by employee and date
+    """
+    try:
+        result = await AttendanceController.get_employee_attendance(employee_id, date)
+        if result["success"]:
+            return result
+        else:
+            raise HTTPException(status_code=400, detail=result["message"])
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/attendance/record")
+async def record_attendance(employee_id: str, check_type: str):
+    """
+    Record attendance (check-in or check-out) for an employee
+    """
+    try:
+        if not employee_id or not check_type:
+            raise HTTPException(status_code=400, detail="Missing required fields")
+            
+        result = await AttendanceController.record_attendance(employee_id, check_type)
+        if result["success"]:
+            return result
+        else:
+            raise HTTPException(status_code=400, detail=result["message"])
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 def run_training():
     try:
