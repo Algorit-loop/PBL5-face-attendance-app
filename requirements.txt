@@ -3,3 +3,6 @@ uvicorn
 opencv-python
 onnxruntime
 ultralytics
+joblib
+python-multipart
+scikit-learn

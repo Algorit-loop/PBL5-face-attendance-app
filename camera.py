@@ -7,12 +7,13 @@ from typing import Dict, Any, Generator
 from ultralytics import YOLO  # Sử dụng YOLOv8
 import onnxruntime
 import asyncio
-from employeecontroller import EmployeeController  # Changed import
+from controllers.employee_controller import EmployeeController  # Changed import
 import joblib
 
 class FaceScanner:
     def __init__(self):
         self.scanning = False
+        self.capturing = False  # New flag to indicate if we're capturing frames
         self.frames_captured = 0
         self.max_frames = 50  # Thay đổi thành 50 frames
         self.employee_id = None
@@ -22,15 +23,24 @@ class FaceScanner:
         
     def start_scan(self, employee_id):
         self.scanning = True
+        self.capturing = False  # Initialize as false - will be set to true with start_capture
         self.employee_id = employee_id
         self.frames_captured = 0
         self.scan_complete = False
         self.warning_message = None
         self.start_time = time.time()
         os.makedirs(os.path.join("face_data", str(employee_id)), exist_ok=True)
+    
+    def start_capture(self):
+        """Start capturing frames after scanning has begun"""
+        if self.scanning:
+            self.capturing = True
+            self.start_time = time.time()  # Reset start time when we begin capturing
+            return True
+        return False
         
     def capture_frame(self, frame):
-        if not self.scanning:
+        if not self.scanning or not self.capturing:
             return False
             
         # Check if 2 seconds have passed since start
@@ -49,6 +59,7 @@ class FaceScanner:
                 # Check if scanning is complete
                 if self.frames_captured >= self.max_frames:
                     self.scanning = False
+                    self.capturing = False
                     self.scan_complete = True
                 return True
             return False
@@ -60,12 +71,19 @@ class FaceScanner:
     def get_status(self):
         return {
             "scanning": self.scanning,
+            "capturing": self.capturing,
             "frames_captured": self.frames_captured,
             "max_frames": self.max_frames,
             "scan_complete": self.scan_complete,
             "warning_message": self.warning_message,
             "progress": (self.frames_captured / self.max_frames) * 100
         }
+        
+    def stop(self):
+        """Stop all scanning and capturing operations"""
+        self.scanning = False
+        self.capturing = False
+        self.warning_message = None
 
 # Load YOLOv8 face model (sử dụng phiên bản nhẹ hơn)
 model = YOLO("yolov8n-face-lindevs.pt")
@@ -424,7 +442,6 @@ def scan_frames() -> Generator[bytes, None, None]:
                                     face_scanner.set_warning("Không tìm thấy khuôn mặt")
                                 elif num_faces > 1:
                                     face_scanner.set_warning("Phát hiện nhiều khuôn mặt! Vui lòng chỉ để một người trong khung hình")
-                                    
                                 else:
                                     face_scanner.set_warning(None)
                                     # Get the single face detected
@@ -439,9 +456,9 @@ def scan_frames() -> Generator[bytes, None, None]:
                                     x2_scaled = int(x2 * scale_x)
                                     y2_scaled = int(y2 * scale_y)
                                     
-                                    # Extract and save face only if one face is detected
+                                    # Extract and save face only if capturing is enabled
                                     face_img = frame[y1_scaled:y2_scaled, x1_scaled:x2_scaled]
-                                    if face_img.size > 0:
+                                    if face_img.size > 0 and face_scanner.capturing:
                                         face_scanner.capture_frame(face_img)
                             
                             # Draw face rectangles and status
@@ -471,6 +488,12 @@ def scan_frames() -> Generator[bytes, None, None]:
                         
                         # Add scanning overlay
                         if face_scanner.scanning:
+                            # Draw capturing status
+                            status_text = "Ready to capture" if not face_scanner.capturing else "Capturing..."
+                            cv2.putText(frame, status_text, (10, 30), 
+                                      cv2.FONT_HERSHEY_SIMPLEX, 0.8, 
+                                      (0, 255, 255) if not face_scanner.capturing else (0, 255, 0), 2)
+                                      
                             # Draw frame count for current direction
                             cv2.putText(frame, 
                                       f"Frames: {face_scanner.frames_captured}/{face_scanner.max_frames}",

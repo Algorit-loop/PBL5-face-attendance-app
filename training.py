@@ -4,8 +4,8 @@ import numpy as np
 import onnxruntime as ort
 
 
-print("DM BAT DAU TRAIN DAY ROIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII")
-print(">>> Bắt đầu chạy training.py")
+print("BAT DAU TRAIN DAY ROIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII")
+# print(">>> Bắt đầu chạy training.py")
 # Hàm tiền xử lý ảnh
 def preprocess_image(image_path, input_size=(112, 112)):
     # Bước 2: Tiền xử lý hình ảnh
@@ -114,5 +114,5 @@ print("Test set score:", test_score)
 joblib.dump(best_model, "svm_face_model.pkl")
 joblib.dump(label_encoder, "label_encoder.pkl")
 
-print(">>> Training hoàn thành; lưu model và encoder rồi!")
+#print(">>> Training hoàn thành; lưu model và encoder rồi!")
 print("Model training completed and saved!")
