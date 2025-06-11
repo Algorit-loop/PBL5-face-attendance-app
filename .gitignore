@@ -11,3 +11,4 @@ face_data/
 
 attendance_data.json
 
+__pycache__/
