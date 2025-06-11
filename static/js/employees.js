@@ -1,7 +1,8 @@
 // Utility function to format date
 const formatDate = (dateString) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('vi-VN');
+    if (!dateString) return '-';
+    const [year, month, day] = dateString.split('-');
+    return `${parseInt(day)}/${parseInt(month)}/${year}`;
 };
 
 // Update datetime in navbar
@@ -61,6 +62,12 @@ class EmployeeManager {
                 <td>${employee.position}</td>
                 <td>
                     <div class="btn-group">
+                        <button class="btn btn-sm btn-info" onclick="employeeManager.viewEmployeeDetails(${employee.id})">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                        <button class="btn btn-sm btn-info" onclick="employeeManager.viewAttendanceHistory(${employee.id}, '${employee.full_name}')">
+                            <i class="fas fa-history"></i>
+                        </button>
                         <button class="btn btn-sm btn-primary" onclick="employeeManager.editEmployee(${employee.id})">
                             <i class="fas fa-edit"></i>
                         </button>
@@ -174,6 +181,219 @@ class EmployeeManager {
         } catch (error) {
             console.error('Error deleting employee:', error);
             alert('Không thể xóa nhân viên');
+        }
+    }
+
+    // Add new methods for attendance history
+    async viewAttendanceHistory(employeeId, employeeName) {
+        // Set employee name in modal
+        document.getElementById('employeeName').textContent = employeeName;
+        
+        // Populate month select
+        const monthSelect = document.getElementById('monthSelect');
+        const currentDate = new Date();
+        const months = [];
+        
+        for (let i = 0; i < 12; i++) {
+            const date = new Date(currentDate.getFullYear(), currentDate.getMonth() - i, 1);
+            const year = date.getFullYear();
+            const month = (date.getMonth() + 1).toString().padStart(2, '0'); // Ensure 2 digits, 0-indexed month
+            const monthValue = `${year}-${month}`;
+
+            const monthStr = date.toLocaleString('vi-VN', { month: 'long', year: 'numeric' });
+            months.push({ value: monthValue, label: monthStr });
+        }
+        
+        monthSelect.innerHTML = months.map(month => 
+            `<option value="${month.value}">${month.label}</option>`
+        ).join('');
+
+        // Log the value that is about to be used for the initial load
+        console.log('DEBUG: Initial monthSelect.value for loadAttendanceData:', monthSelect.value);
+
+        // Show modal
+        const modal = new bootstrap.Modal(document.getElementById('attendanceHistoryModal'));
+        modal.show();
+
+        // Load initial data
+        await this.loadAttendanceData(employeeId, monthSelect.value);
+
+        // Add event listener for month change
+        monthSelect.addEventListener('change', () => {
+            this.loadAttendanceData(employeeId, monthSelect.value);
+        });
+    }
+
+    async loadAttendanceData(employeeId, month) {
+        try {
+            console.log(`Frontend: Fetching attendance for employeeId=${employeeId}, month=${month}`); // More detailed debug
+            const response = await fetch(`/api/attendance?employee_id=${employeeId}&date=${month}`);
+            
+            if (!response.ok) {
+                const errorText = await response.text();
+                console.error('Frontend: Network response was not ok:', response.status, errorText); // Log status and error body
+                throw new Error('Failed to fetch attendance data');
+            }
+            
+            const data = await response.json();
+            console.log('Frontend: Received attendance data:', data); // Log the full data object
+            
+            if (data.success) {
+                this.renderAttendanceChart(data.data);
+                this.renderAttendanceDetails(data.data);
+            } else {
+                console.error('Frontend: Backend reported success: false', data.message);
+                throw new Error(data.message || 'Failed to fetch attendance data');
+            }
+        } catch (error) {
+            console.error('Error loading attendance data:', error);
+            alert('Không thể tải dữ liệu điểm danh');
+        }
+    }
+
+    renderAttendanceChart(data) {
+        const ctx = document.getElementById('attendanceChart').getContext('2d');
+        
+        // Destroy existing chart if it exists
+        if (this.attendanceChart) {
+            this.attendanceChart.destroy();
+        }
+
+        // Prepare data for chart
+        const labels = data.map(record => {
+            if (record.date) {
+                return parseInt(record.date.split('-')[2]); // Extract day from YYYY-MM-DD
+            }
+            return ''; // Fallback for missing date
+        });
+        const checkInData = data.map(record => record.check_in ? new Date(`2000-01-01T${record.check_in}`).getHours() + new Date(`2000-01-01T${record.check_in}`).getMinutes() / 60 : null);
+        const checkOutData = data.map(record => record.check_out ? new Date(`2000-01-01T${record.check_out}`).getHours() + new Date(`2000-01-01T${record.check_out}`).getMinutes() / 60 : null);
+
+        // Create new chart
+        this.attendanceChart = new Chart(ctx, {
+            type: 'scatter',
+            data: {
+                labels: labels,
+                datasets: [
+                    {
+                        label: 'Giờ vào',
+                        data: checkInData,
+                        borderColor: 'rgb(75, 192, 192)',
+                        tension: 0.1,
+                        pointRadius: 5,
+                        pointHoverRadius: 7
+                    },
+                    {
+                        label: 'Giờ ra',
+                        data: checkOutData,
+                        borderColor: 'rgb(255, 99, 132)',
+                        tension: 0.1,
+                        pointRadius: 5,
+                        pointHoverRadius: 7
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'Giờ'
+                        },
+                        min: 0,
+                        max: 24 // Assuming hours 0-24
+                    },
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Ngày'
+                        },
+                        type: 'category',
+                        labels: labels // Use category type with labels for discrete days
+                    }
+                },
+                tooltips: {
+                    callbacks: {
+                        label: function(tooltipItem, data) {
+                            const datasetLabel = data.datasets[tooltipItem.datasetIndex].label || '';
+                            const timeInHours = tooltipItem.yLabel;
+                            const hours = Math.floor(timeInHours);
+                            const minutes = Math.round((timeInHours - hours) * 60);
+                            return `${datasetLabel}: ${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    renderAttendanceDetails(data) {
+        const tbody = document.getElementById('attendanceDetails');
+        tbody.innerHTML = ''; // Clear existing records
+
+        if (data && data.length > 0) {
+            tbody.innerHTML = data.map(record => `
+                <tr>
+                    <td>${formatDate(record.date)}</td>
+                    <td>${record.check_in ? new Date(`2000-01-01T${record.check_in}`).toLocaleTimeString('vi-VN') : '-'}</td>
+                    <td>${record.check_out ? new Date(`2000-01-01T${record.check_out}`).toLocaleTimeString('vi-VN') : '-'}</td>
+                    <td>
+                        <span class="badge ${this.getStatusBadgeClass(record)}">
+                            ${this.getStatusText(record)}
+                        </span>
+                    </td>
+                </tr>
+            `).join('');
+        } else {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td colspan="4" class="text-center py-4">
+                    <i class="fas fa-info-circle me-2"></i>
+                    Không có dữ liệu điểm danh
+                </td>
+            `;
+            tbody.appendChild(row);
+        }
+    }
+
+    getStatusBadgeClass(record) {
+        if (!record.check_in) return 'bg-danger';
+        if (!record.check_out) return 'bg-warning';
+        return 'bg-success';
+    }
+
+    getStatusText(record) {
+        if (!record.check_in) return 'Vắng mặt';
+        if (!record.check_out) return 'Đang làm việc';
+        return 'Hoàn thành';
+    }
+
+    // Add new method for viewing employee details
+    async viewEmployeeDetails(employeeId) {
+        try {
+            const response = await fetch(`/employees/${employeeId}`);
+            if (!response.ok) throw new Error('Failed to fetch employee details');
+            
+            const employee = await response.json();
+            
+            // Update modal content
+            document.getElementById('employeeFullName').textContent = employee.full_name;
+            document.getElementById('employeeId').textContent = employee.id;
+            document.getElementById('employeeBirthDate').textContent = formatDate(employee.birth_date);
+            document.getElementById('employeeEmail').textContent = employee.email;
+            document.getElementById('employeePhone').textContent = employee.phone;
+            document.getElementById('employeeAddress').textContent = employee.address;
+            document.getElementById('employeeGender').textContent = employee.gender;
+            document.getElementById('employeePosition').textContent = employee.position;
+            
+            // Show modal
+            const modal = new bootstrap.Modal(document.getElementById('employeeDetailsModal'));
+            modal.show();
+        } catch (error) {
+            console.error('Error loading employee details:', error);
+            alert('Không thể tải thông tin chi tiết nhân viên');
         }
     }
 }

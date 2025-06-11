@@ -43,6 +43,11 @@ async function loadAttendance() {
         if (params.toString()) url += '?' + params.toString();
         
         const response = await fetch(url);
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.detail || 'Failed to load attendance data');
+        }
+        
         const data = await response.json();
         
         // Clear existing records
@@ -92,13 +97,22 @@ async function loadAttendance() {
             row.innerHTML = `
                 <td colspan="5" class="text-center py-4">
                     <i class="fas fa-info-circle me-2"></i>
-                    Không có dữ liệu điểm danh
+                    ${data.message || 'Không có dữ liệu điểm danh'}
                 </td>
             `;
             attendanceTableBody.appendChild(row);
         }
     } catch (error) {
         console.error('Error loading attendance:', error);
+        // Show error message in the table
+        attendanceTableBody.innerHTML = `
+            <tr>
+                <td colspan="5" class="text-center py-4 text-danger">
+                    <i class="fas fa-exclamation-circle me-2"></i>
+                    ${error.message || 'Không thể tải dữ liệu điểm danh'}
+                </td>
+            </tr>
+        `;
     }
 }
 

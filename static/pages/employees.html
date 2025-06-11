@@ -8,6 +8,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="stylesheet" href="/static/css/style.css">
     <link rel="stylesheet" href="/static/css/employees.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
     <!-- Navigation Bar -->
@@ -81,6 +82,125 @@
                         <!-- Employee list will be populated by JavaScript -->
                     </tbody>
                 </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Employee Details Modal -->
+    <div class="modal fade" id="employeeDetailsModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fas fa-user me-2"></i>
+                        Thông tin chi tiết nhân viên
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-4 text-center mb-4">
+                            <div class="employee-avatar">
+                                <img id="employeeAvatar" src="/static/images/default-avatar.png" alt="Employee Avatar" class="img-fluid rounded-circle">
+                            </div>
+                        </div>
+                        <div class="col-md-8">
+                            <div class="employee-info">
+                                <h4 id="employeeFullName" class="mb-3"></h4>
+                                <div class="info-group mb-3">
+                                    <label class="text-muted">ID:</label>
+                                    <span id="employeeId" class="ms-2"></span>
+                                </div>
+                                <div class="info-group mb-3">
+                                    <label class="text-muted">Ngày sinh:</label>
+                                    <span id="employeeBirthDate" class="ms-2"></span>
+                                </div>
+                                <div class="info-group mb-3">
+                                    <label class="text-muted">Email:</label>
+                                    <span id="employeeEmail" class="ms-2"></span>
+                                </div>
+                                <div class="info-group mb-3">
+                                    <label class="text-muted">Số điện thoại:</label>
+                                    <span id="employeePhone" class="ms-2"></span>
+                                </div>
+                                <div class="info-group mb-3">
+                                    <label class="text-muted">Địa chỉ:</label>
+                                    <span id="employeeAddress" class="ms-2"></span>
+                                </div>
+                                <div class="info-group mb-3">
+                                    <label class="text-muted">Giới tính:</label>
+                                    <span id="employeeGender" class="ms-2"></span>
+                                </div>
+                                <div class="info-group mb-3">
+                                    <label class="text-muted">Chức vụ:</label>
+                                    <span id="employeePosition" class="ms-2"></span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-1"></i>Đóng
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Attendance History Modal -->
+    <div class="modal fade" id="attendanceHistoryModal" tabindex="-1">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fas fa-history me-2"></i>
+                        Lịch sử điểm danh - <span id="employeeName"></span>
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <label for="monthSelect" class="form-label">Chọn tháng</label>
+                            <select class="form-select" id="monthSelect">
+                                <!-- Months will be populated by JavaScript -->
+                            </select>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-body">
+                                    <h6 class="card-title">Thống kê điểm danh</h6>
+                                    <canvas id="attendanceChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-body">
+                                    <h6 class="card-title">Chi tiết điểm danh</h6>
+                                    <div class="table-responsive">
+                                        <table class="table table-sm">
+                                            <thead>
+                                                <tr>
+                                                    <th>Ngày</th>
+                                                    <th>Giờ vào</th>
+                                                    <th>Giờ ra</th>
+                                                    <th>Trạng thái</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="attendanceDetails">
+                                                <!-- Attendance details will be populated here -->
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>

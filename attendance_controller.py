@@ -1,8 +1,10 @@
 import asyncio
-from datetime import datetime
+from datetime import datetime, date, timedelta
 import json
 import os
 from employeecontroller import EmployeeController
+import calendar
+from typing import Optional
 
 class AttendanceController:
     ATTENDANCE_FILE = "attendance_data.json"
@@ -55,63 +57,136 @@ class AttendanceController:
             }
     
     @classmethod
-    async def get_employee_attendance(cls, employee_id: str = None, date: str = None) -> dict:
+    async def get_employee_attendance(cls, employee_id: Optional[str] = None, date: Optional[str] = None) -> dict:
         """
-        Get attendance records for an employee or all employees
-        If date is provided, returns attendance for that specific date
-        Otherwise returns all attendance records
-        Luôn trả về đủ danh sách nhân viên cho mỗi ngày (kể cả người không có bản ghi)
+        Get attendance records for an employee or all employees, optionally filtered by date or month.
+        If date is provided, returns attendance for that specific date or month.
         """
         try:
+            print(f"Backend: Received employee_id={employee_id}, date={date}") # Debug print
             attendance_data = cls._load_attendance_data()
             employees = await EmployeeController.get_all()
             emp_map = {str(emp["id"]): emp["full_name"] for emp in employees}
             emp_ids = [str(emp["id"]) for emp in employees]
 
-            records = []
+            # Validate employee_id if provided
+            if employee_id and str(employee_id) not in emp_map:
+                return {
+                    "success": False,
+                    "message": f"Không tìm thấy nhân viên với ID {employee_id}"
+                }
+
+            # Validate date format if provided
             if date:
-                # Trả về đủ danh sách nhân viên cho ngày đó
+                if len(date) not in [7, 10]:  # YYYY-MM or YYYY-MM-DD
+                    return {
+                        "success": False,
+                        "message": "Định dạng ngày không hợp lệ. Sử dụng YYYY-MM hoặc YYYY-MM-DD"
+                    }
+                try:
+                    if len(date) == 7:  # YYYY-MM
+                        year, month = map(int, date.split('-'))
+                        if not (1 <= month <= 12):
+                            raise ValueError("Tháng không hợp lệ")
+                    else:  # YYYY-MM-DD
+                        datetime.strptime(date, "%Y-%m-%d")
+                except ValueError as e:
+                    return {
+                        "success": False,
+                        "message": f"Ngày không hợp lệ: {str(e)}"
+                    }
+
+            records = []
+
+            if employee_id and date and len(date) == 7: # YYYY-MM format for a specific employee
+                year, month_num = map(int, date.split('-'))
+                num_days = calendar.monthrange(year, month_num)[1]
+                start_date = datetime(year, month_num, 1).date()
+
+                for i in range(num_days):
+                    current_date = start_date + timedelta(days=i)
+                    d_str = current_date.strftime("%Y-%m-%d")
+                    rec = attendance_data.get(str(employee_id), {}).get(d_str, None)
+                    print(f"Backend: Processing date {d_str}, record: {rec}") # New debug log
+                    records.append({
+                        "date": d_str,
+                        "employee_id": employee_id,
+                        "employee_name": emp_map.get(str(employee_id), "Unknown"),
+                        "check_in": rec.get("check_in") if rec else None,
+                        "check_out": rec.get("check_out") if rec else None
+                    })
+            elif employee_id: # Get all attendance for a specific employee
+                if str(employee_id) not in attendance_data:
+                    return {"success": True, "data": [], "message": "Không có dữ liệu điểm danh cho nhân viên này"}
+                
+                # Filter by date or month if provided and valid
+                for d, rec in attendance_data[str(employee_id)].items():
+                    if date:
+                        if len(date) == 7:  # YYYY-MM format, filter by month
+                            if not d.startswith(date):
+                                continue
+                        elif len(date) == 10:  # YYYY-MM-DD format, filter by specific date
+                            if d != date:
+                                continue
+                    records.append({
+                        "date": d,
+                        "employee_id": employee_id,
+                        "employee_name": emp_map.get(str(employee_id), "Unknown"),
+                        "check_in": rec.get("check_in"),
+                        "check_out": rec.get("check_out")
+                    })
+            elif date and len(date) == 10: # YYYY-MM-DD format for all employees on a specific date
                 for emp_id in emp_ids:
                     rec = attendance_data.get(emp_id, {}).get(date, None)
                     records.append({
                         "date": date,
                         "employee_id": emp_id,
                         "employee_name": emp_map.get(emp_id, "Unknown"),
-                        "check_in": rec["check_in"] if rec else None,
-                        "check_out": rec["check_out"] if rec else None
+                        "check_in": rec.get("check_in") if rec else None,
+                        "check_out": rec.get("check_out") if rec else None
                     })
-            elif employee_id:
-                # Chỉ lấy cho 1 nhân viên
-                if employee_id not in attendance_data:
-                    return {"success": True, "data": []}
-                for d, rec in attendance_data[employee_id].items():
-                    records.append({
-                        "date": d,
-                        "employee_id": employee_id,
-                        "employee_name": emp_map.get(str(employee_id), "Unknown"),
-                        "check_in": rec["check_in"],
-                        "check_out": rec["check_out"]
-                    })
-            else:
-                # Lấy cho tất cả nhân viên, tất cả ngày (tổng hợp)
+            else: # Get all attendance records
+                if date and len(date) != 7 and len(date) != 10:
+                    return {
+                        "success": False,
+                        "message": "Định dạng ngày không hợp lệ cho truy vấn tất cả nhân viên. Sử dụng YYYY-MM hoặc YYYY-MM-DD"
+                    }
+
                 all_dates = set()
                 for days in attendance_data.values():
                     all_dates.update(days.keys())
-                for d in all_dates:
+                for d in sorted(list(all_dates), reverse=True):
+                    if date and not d.startswith(date):
+                        continue
                     for emp_id in emp_ids:
                         rec = attendance_data.get(emp_id, {}).get(d, None)
                         records.append({
                             "date": d,
                             "employee_id": emp_id,
                             "employee_name": emp_map.get(emp_id, "Unknown"),
-                            "check_in": rec["check_in"] if rec else None,
-                            "check_out": rec["check_out"] if rec else None
+                            "check_in": rec.get("check_in") if rec else None,
+                            "check_out": rec.get("check_out") if rec else None
                         })
-            # Sắp xếp theo ngày mới nhất, sau đó theo tên nhân viên
+
+            # Sort records by date (newest first), then by employee name
             records = sorted(records, key=lambda x: (x["date"], x["employee_name"]), reverse=True)
+            
+            print(f"Backend: Returning records: {records}") # New debug log
+
+            if not records:
+                return {
+                    "success": True,
+                    "data": [],
+                    "message": "Không có dữ liệu điểm danh cho khoảng thời gian này"
+                }
+            
             return {"success": True, "data": records}
         except Exception as e:
-            return {"success": False, "message": f"Error getting attendance: {str(e)}"}
+            print(f"Backend Error (attendance_controller): Type={type(e)}, Value={e}") # Debug print
+            return {
+                "success": False,
+                "message": f"Lỗi khi lấy dữ liệu điểm danh: {str(e)}"
+            }
     
     @classmethod
     def _load_attendance_data(cls) -> dict:

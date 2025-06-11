@@ -94,29 +94,13 @@ function displayAttendance(records) {
         return;
     }
     
-    // Group records by employee
-    const employeeRecords = {};
+    // The backend's /api/attendance?date=today endpoint already returns records
+    // with check_in and check_out directly available for each employee.
+    // So, we can directly iterate and display them.
     records.forEach(record => {
-        if (!employeeRecords[record.employee_id]) {
-            employeeRecords[record.employee_id] = {
-                name: record.employee_name || 'Unknown',
-                check_in: null,
-                check_out: null
-            };
-        }
-        
-        if (record.check_type === 'in') {
-            employeeRecords[record.employee_id].check_in = record.time;
-        } else {
-            employeeRecords[record.employee_id].check_out = record.time;
-        }
-    });
-    
-    // Create table rows
-    Object.entries(employeeRecords).forEach(([employeeId, record]) => {
         const row = document.createElement('tr');
         row.innerHTML = `
-            <td>${record.name}</td>
+            <td>${record.employee_name}</td>
             <td>${record.check_in || '-'}</td>
             <td>${record.check_out || '-'}</td>
         `;
