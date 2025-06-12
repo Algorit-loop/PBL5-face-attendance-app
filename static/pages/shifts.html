@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quản lý Ca làm</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/sweetalert2@11.0.19/dist/sweetalert2.min.css" rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #f8f9fa;
+        }
+        .main-container {
+            display: flex;
+            min-height: 100vh;
+        }
+        /* Content Area Styles */
+        .content-area {
+            margin-left: 250px;
+            flex-grow: 1;
+            padding: 20px;
+        }
+        .card {
+            border: none;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+        .card-header {
+            background-color: #f8f9fa;
+            border-bottom: 1px solid #e9ecef;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .btn-action {
+            margin-left: 5px;
+        }
+        .table th {
+            font-weight: 600;
+        }
+        .loading-spinner {
+            display: none;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 1001;
+            justify-content: center;
+            align-items: center;
+        }
+        .loading-spinner div {
+            width: 3rem;
+            height: 3rem;
+        }
+        @media (max-width: 768px) {
+            .sidebar {
+                transform: translateX(-100%);
+                transition: transform 0.3s ease;
+            }
+            .sidebar.show {
+                transform: translateX(0);
+            }
+            .content-area {
+                margin-left: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="main-container">
+        <!-- Include Sidebar -->
+        <div id="sidebar-container"></div>
+
+        <!-- Content Area -->
+        <div class="content-area">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1>Quản lý Ca làm</h1>
+                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addShiftModal">
+                    <i class="fas fa-plus me-2"></i>Thêm ca làm mới
+                </button>
+            </div>
+            
+            <div class="card">
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Tên ca</th>
+                                    <th>Giờ bắt đầu</th>
+                                    <th>Giờ kết thúc</th>
+                                    <th>Thao tác</th>
+                                </tr>
+                            </thead>
+                            <tbody id="shifts-table-body">
+                                <!-- Shifts will be loaded here -->
+                                <tr>
+                                    <td colspan="5" class="text-center">
+                                        <div class="spinner-border text-primary" role="status">
+                                            <span class="visually-hidden">Loading...</span>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Shift Modal -->
+    <div class="modal fade" id="addShiftModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Thêm ca làm mới</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="add-shift-form">
+                        <div class="mb-3">
+                            <label for="shift-name" class="form-label">Tên ca</label>
+                            <input type="text" class="form-control" id="shift-name" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="start-time" class="form-label">Giờ bắt đầu</label>
+                            <input type="time" class="form-control" id="start-time" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="end-time" class="form-label">Giờ kết thúc</label>
+                            <input type="time" class="form-control" id="end-time" required>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                    <button type="button" class="btn btn-primary" id="save-shift-btn">Lưu</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Shift Modal -->
+    <div class="modal fade" id="editShiftModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Chỉnh sửa ca làm</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="edit-shift-form">
+                        <input type="hidden" id="edit-shift-id">
+                        <div class="mb-3">
+                            <label for="edit-shift-name" class="form-label">Tên ca</label>
+                            <input type="text" class="form-control" id="edit-shift-name" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="edit-start-time" class="form-label">Giờ bắt đầu</label>
+                            <input type="time" class="form-control" id="edit-start-time" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="edit-end-time" class="form-label">Giờ kết thúc</label>
+                            <input type="time" class="form-control" id="edit-end-time" required>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                    <button type="button" class="btn btn-primary" id="update-shift-btn">Cập nhật</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Shift Modal -->
+    <div class="modal fade" id="deleteShiftModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Xác nhận xóa</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Bạn có chắc chắn muốn xóa ca làm này?</p>
+                    <p class="text-danger">Lưu ý: Việc này có thể ảnh hưởng đến dữ liệu điểm danh.</p>
+                    <input type="hidden" id="delete-shift-id">
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                    <button type="button" class="btn btn-danger" id="confirm-delete-btn">Xóa</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.0.19/dist/sweetalert2.all.min.js"></script>
+    <script>
+        // Load sidebar
+        document.addEventListener('DOMContentLoaded', function() {
+            fetch('/static/pages/sidebar.html')
+                .then(response => response.text())
+                .then(html => {
+                    document.getElementById('sidebar-container').innerHTML = html;
+                    
+                    // Highlight current page in sidebar after it's loaded
+                    const currentPath = window.location.pathname;
+                    const navLinks = document.querySelectorAll('.nav-link');
+                    
+                    navLinks.forEach(link => {
+                        if (link.getAttribute('href') === currentPath) {
+                            link.classList.add('active');
+                        } else {
+                            link.classList.remove('active');
+                        }
+                    });
+                    
+                    // Add event listener to logout button
+                    document.getElementById('logoutBtn').addEventListener('click', async function() {
+                        try {
+                            loadingSpinner.style.display = 'flex';
+                            const response = await fetch('/api/logout', {
+                                method: 'POST'
+                            });
+                            if (response.ok) {
+                                window.location.href = '/login';
+                            }
+                        } catch (error) {
+                            console.error('Error during logout:', error);
+                        } finally {
+                            loadingSpinner.style.display = 'none';
+                        }
+                    });
+                })
+                .catch(error => {
+                    console.error('Error loading sidebar:', error);
+                });
+        });
+
+
+        $(document).ready(function() {
+            // Load user info
+            loadUserInfo();
+            
+            // Load shifts
+            loadShifts();
+            
+            // Save new shift
+            $("#save-shift-btn").click(function() {
+                saveShift();
+            });
+            
+            // Update shift
+            $("#update-shift-btn").click(function() {
+                updateShift();
+            });
+            
+            // Confirm delete
+            $("#confirm-delete-btn").click(function() {
+                deleteShift();
+            });
+            
+            // Handle logout
+            $("#logoutBtn").click(async function() {
+                try {
+                    const response = await fetch('/api/logout', {
+                        method: 'POST'
+                    });
+                    if (response.ok) {
+                        window.location.href = '/login';
+                    }
+                } catch (error) {
+                    console.error('Error during logout:', error);
+                }
+            });
+        });
+        
+        // Load user info
+        async function loadUserInfo() {
+            try {
+                const response = await fetch('/api/user');
+                const data = await response.json();
+                document.getElementById('currentUsername').textContent = data.full_name || data.username;
+                document.getElementById('userRole').textContent = data.position === 'admin' ? 'Administrator' : 'Employee';
+            } catch (error) {
+                console.error('Error loading user info:', error);
+            }
+        }
+        
+        // Load shifts from API
+        function loadShifts() {
+            $.ajax({
+                url: "/api/shifts",
+                type: "GET",
+                success: function(data) {
+                    renderShifts(data);
+                },
+                error: function(xhr) {
+                    handleApiError(xhr, "Không thể tải danh sách ca làm");
+                }
+            });
+        }
+        
+        // Render shifts table
+        function renderShifts(shifts) {
+            const tableBody = $("#shifts-table-body");
+            tableBody.empty();
+            
+            if (shifts.length === 0) {
+                tableBody.append('<tr><td colspan="5" class="text-center">Không có ca làm nào</td></tr>');
+                return;
+            }
+            
+            shifts.forEach(function(shift) {
+                tableBody.append(`
+                    <tr>
+                        <td>${shift.id}</td>
+                        <td>${shift.name}</td>
+                        <td>${shift.start_time}</td>
+                        <td>${shift.end_time}</td>
+                        <td>
+                            <button class="btn btn-sm btn-primary btn-action" onclick="editShift(${shift.id})">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button class="btn btn-sm btn-danger btn-action" onclick="confirmDelete(${shift.id})">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </td>
+                    </tr>
+                `);
+            });
+        }
+        
+        // Save new shift
+        function saveShift() {
+            const name = $("#shift-name").val();
+            const startTime = $("#start-time").val();
+            const endTime = $("#end-time").val();
+            
+            if (!name || !startTime || !endTime) {
+                Swal.fire("Lỗi", "Vui lòng điền đầy đủ thông tin", "error");
+                return;
+            }
+            
+            const shiftData = {
+                name: name,
+                start_time: startTime,
+                end_time: endTime
+            };
+            
+            $.ajax({
+                url: "/api/shifts",
+                type: "POST",
+                contentType: "application/json",
+                data: JSON.stringify(shiftData),
+                success: function(response) {
+                    if (response.success) {
+                        $("#addShiftModal").modal("hide");
+                        loadShifts();
+                        resetForm("#add-shift-form");
+                        Swal.fire("Thành công", "Đã thêm ca làm mới", "success");
+                    } else {
+                        Swal.fire("Lỗi", response.message || "Không thể thêm ca làm", "error");
+                    }
+                },
+                error: function(xhr) {
+                    handleApiError(xhr, "Không thể thêm ca làm");
+                }
+            });
+        }
+        
+        // Open edit modal
+        function editShift(shiftId) {
+            $.ajax({
+                url: `/api/shifts/${shiftId}`,
+                type: "GET",
+                success: function(shift) {
+                    $("#edit-shift-id").val(shift.id);
+                    $("#edit-shift-name").val(shift.name);
+                    $("#edit-start-time").val(shift.start_time);
+                    $("#edit-end-time").val(shift.end_time);
+                    
+                    $("#editShiftModal").modal("show");
+                },
+                error: function(xhr) {
+                    handleApiError(xhr, "Không thể tải thông tin ca làm");
+                }
+            });
+        }
+        
+        // Update shift
+        function updateShift() {
+            const shiftId = $("#edit-shift-id").val();
+            const name = $("#edit-shift-name").val();
+            const startTime = $("#edit-start-time").val();
+            const endTime = $("#edit-end-time").val();
+            
+            if (!name || !startTime || !endTime) {
+                Swal.fire("Lỗi", "Vui lòng điền đầy đủ thông tin", "error");
+                return;
+            }
+            
+            const shiftData = {
+                name: name,
+                start_time: startTime,
+                end_time: endTime
+            };
+            
+            $.ajax({
+                url: `/api/shifts/${shiftId}`,
+                type: "PUT",
+                contentType: "application/json",
+                data: JSON.stringify(shiftData),
+                success: function(response) {
+                    if (response.success) {
+                        $("#editShiftModal").modal("hide");
+                        loadShifts();
+                        Swal.fire("Thành công", "Đã cập nhật ca làm", "success");
+                    } else {
+                        Swal.fire("Lỗi", response.message || "Không thể cập nhật ca làm", "error");
+                    }
+                },
+                error: function(xhr) {
+                    handleApiError(xhr, "Không thể cập nhật ca làm");
+                }
+            });
+        }
+        
+        // Confirm delete
+        function confirmDelete(shiftId) {
+            $("#delete-shift-id").val(shiftId);
+            $("#deleteShiftModal").modal("show");
+        }
+        
+        // Delete shift
+        function deleteShift() {
+            const shiftId = $("#delete-shift-id").val();
+            
+            $.ajax({
+                url: `/api/shifts/${shiftId}`,
+                type: "DELETE",
+                success: function(response) {
+                    if (response.success) {
+                        $("#deleteShiftModal").modal("hide");
+                        loadShifts();
+                        Swal.fire("Thành công", "Đã xóa ca làm", "success");
+                    } else {
+                        Swal.fire("Lỗi", response.message || "Không thể xóa ca làm", "error");
+                    }
+                },
+                error: function(xhr) {
+                    handleApiError(xhr, "Không thể xóa ca làm");
+                }
+            });
+        }
+        
+        // Reset form
+        function resetForm(formId) {
+            $(formId)[0].reset();
+        }
+        
+        // Handle API errors
+        function handleApiError(xhr, defaultMessage) {
+            let errorMessage = defaultMessage;
+            
+            if (xhr.responseJSON) {
+                errorMessage = xhr.responseJSON.message || defaultMessage;
+            }
+            
+            Swal.fire("Lỗi", errorMessage, "error");
+        }
+    </script>
+</body>
+</html> 

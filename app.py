@@ -16,8 +16,10 @@ import uvicorn
 import base64
 import sys
 
-from models import Employee, APIResponse
+from models import Employee, APIResponse, Shift, ShiftCreate, ShiftUpdate, Attendance, AttendanceCreate, AttendanceFilter
 from controllers.employee_controller import EmployeeController
+from controllers.shift_controller import ShiftController
+from controllers.attendance_controller import AttendanceController
 import database
 import camera
 
@@ -414,7 +416,7 @@ async def capture_face(request: Request):
 @app.post("/api/verify")
 async def verify_face(request: Request):
     try:
-        session = login_required(request)
+        session = admin_required(request)
         # Ensure camera is initialized
         if not camera.camera_running:
             print("Camera not running, initializing...")
@@ -486,22 +488,70 @@ async def mark_attendance(request: Request, data: dict):
     try:
         session = login_required(request)
         employee_id = data.get("employee_id")
-        status = data.get("status", "present")
+        shift_id = data.get("shift_id", 1)  # Default to first shift if not specified
+        image_data = data.get("image_data")  # Base64 encoded image
         
         if not employee_id:
             return {"success": False, "message": "Employee ID is required"}
         
+        # Create attendance record
+        attendance_data = AttendanceCreate(
+            employee_id=employee_id,
+            shift_id=shift_id
+        )
+        
+        attendance_controller = AttendanceController()
+        attendance = await attendance_controller.create(attendance_data)
+        
+        # Save image if available
+        if image_data and attendance.get("id"):
+            try:
+                # Ensure directory exists
+                img_dir = "img_historyreport"
+                if not os.path.exists(img_dir):
+                    os.makedirs(img_dir)
+                    print(f"Created directory: {img_dir}")
+                
+                # Save image
+                attendance_id = attendance.get("id")
+                image_path = os.path.join(img_dir, f"imgreport_{attendance_id}.jpg")
+                
+                # Decode base64 image
+                try:
+                    image_bytes = base64.b64decode(image_data)
+                    
+                    # Write image to file
+                    with open(image_path, "wb") as f:
+                        f.write(image_bytes)
+                    
+                    print(f"Saved attendance image to {image_path}, size: {len(image_bytes)} bytes")
+                    attendance["image_path"] = image_path
+                except Exception as decode_error:
+                    print(f"Error decoding image: {str(decode_error)}")
+                    print(f"Image data length: {len(image_data) if image_data else 'None'}")
+            except Exception as img_error:
+                print(f"Error saving attendance image: {str(img_error)}")
+                import traceback
+                traceback.print_exc()
+        else:
+            print("No image data provided or attendance ID not available")
+            if not image_data:
+                print("Image data is missing")
+            if not attendance.get("id"):
+                print("Attendance ID is missing")
+        
         # Reset recognition state after marking attendance
         camera.reset_recognition()
             
-        # In a real app, this would save to a database
-        # For now, just return success
         return {
             "success": True,
-            "message": f"Attendance marked for employee {employee_id} as {status}"
+            "message": f"Attendance marked for employee {employee_id}",
+            "attendance": attendance
         }
     except Exception as e:
         print(f"Error marking attendance: {str(e)}")
+        import traceback
+        traceback.print_exc()
         return {"success": False, "message": str(e)}
 
 # Camera status
@@ -587,42 +637,42 @@ async def train_status():
     return training_status
 
 def run_training():
-    print(">>> Đang chạy training.py ...", flush=True)
+        print(">>> Đang chạy training.py ...", flush=True)
 
     # Dùng chính interpreter của chương trình cha (đang ở trong venv)
-    cmd = [sys.executable, "training.py"]
+        cmd = [sys.executable, "training.py"]
 
     # KHÔNG dùng shell=True để tránh lỗi parse lệnh Windows
-    proc = subprocess.Popen(
+        proc = subprocess.Popen(
         cmd,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        text=True
-    )
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True
+        )
 
-    # In realtime output
-    while True:
-        line = proc.stdout.readline()
-        if not line:
-            break
+        # In realtime output
+        while True:
+            line = proc.stdout.readline()
+            if not line:
+                break
         print(line.rstrip(), flush=True)
 
     # Chờ tiến trình kết thúc và kiểm tra lỗi
-    proc.wait()
-    if proc.returncode != 0:
-        print(">>> Lỗi khi chạy training.py:", flush=True)
-        for line in proc.stderr:
-            print(line.rstrip(), flush=True)
-    else:
-        print(">>> Training hoàn thành thành công", flush=True)
+        proc.wait()
+        if proc.returncode != 0:
+            print(">>> Lỗi khi chạy training.py:", flush=True)
+            for line in proc.stderr:
+                print(line.rstrip(), flush=True)
+        else:
+            print(">>> Training hoàn thành thành công", flush=True)
 
     # Reload model sau khi training
-    from camera import Camera
-    Camera.reload_model()
-    print(">>> Model đã được reload", flush=True)
+        from camera import Camera
+        Camera.reload_model()
+        print(">>> Model đã được reload", flush=True)
     
     # Reset training status
-    training_status["is_training"] = False
+        training_status["is_training"] = False
 
 # Page routes
 @app.get("/verify")
@@ -648,6 +698,199 @@ async def add_employee_page(request: Request):
         return RedirectResponse(url="/static/pages/add_employee.html")
     except HTTPException:
         return RedirectResponse(url="/login")
+
+# Shift API endpoints
+@app.get("/api/shifts")
+async def get_shifts(request: Request):
+    try:
+        session = login_required(request)
+        shift_controller = ShiftController()
+        shifts = await shift_controller.get_all()
+        return shifts
+    except HTTPException as e:
+        return e
+
+@app.get("/api/shifts/{shift_id}")
+async def get_shift(request: Request, shift_id: int):
+    try:
+        session = login_required(request)
+        shift_controller = ShiftController()
+        shift = await shift_controller.get_by_id(shift_id)
+        if not shift:
+            return HTTPException(status_code=404, detail="Shift not found")
+        return shift
+    except HTTPException as e:
+        return e
+
+@app.post("/api/shifts")
+async def create_shift(request: Request, shift: ShiftCreate):
+    try:
+        session = admin_required(request)
+        shift_controller = ShiftController()
+        created_shift = await shift_controller.create(shift)
+        return JSONResponse(content={
+            "success": True,
+            "message": "Shift created successfully",
+            "shift": created_shift
+        })
+    except HTTPException as e:
+        return JSONResponse(
+            status_code=e.status_code,
+            content={"success": False, "message": e.detail}
+        )
+    except Exception as e:
+        return JSONResponse(
+            status_code=500,
+            content={"success": False, "message": str(e)}
+        )
+
+@app.put("/api/shifts/{shift_id}")
+async def update_shift(request: Request, shift_id: int, shift: ShiftUpdate):
+    try:
+        session = admin_required(request)
+        shift_controller = ShiftController()
+        updated_shift = await shift_controller.update(shift_id, shift)
+        return JSONResponse(content={
+            "success": True,
+            "message": "Shift updated successfully",
+            "shift": updated_shift
+        })
+    except HTTPException as e:
+        return JSONResponse(
+            status_code=e.status_code,
+            content={"success": False, "message": e.detail}
+        )
+    except Exception as e:
+        return JSONResponse(
+            status_code=500,
+            content={"success": False, "message": str(e)}
+        )
+
+@app.delete("/api/shifts/{shift_id}")
+async def delete_shift(request: Request, shift_id: int):
+    try:
+        session = admin_required(request)
+        shift_controller = ShiftController()
+        result = await shift_controller.delete(shift_id)
+        return result
+    except HTTPException as e:
+        return JSONResponse(
+            status_code=e.status_code,
+            content={"success": False, "message": e.detail}
+        )
+    except Exception as e:
+        return JSONResponse(
+            status_code=500,
+            content={"success": False, "message": str(e)}
+        )
+
+# Attendance API endpoints
+@app.post("/api/attendance/record")
+async def record_attendance(request: Request, attendance: AttendanceCreate):
+    try:
+        session = login_required(request)
+        attendance_controller = AttendanceController()
+        recorded_attendance = await attendance_controller.create(attendance)
+        return JSONResponse(content={
+            "success": True,
+            "message": "Attendance recorded successfully",
+            "attendance": recorded_attendance
+        })
+    except HTTPException as e:
+        return JSONResponse(
+            status_code=e.status_code,
+            content={"success": False, "message": e.detail}
+        )
+    except Exception as e:
+        return JSONResponse(
+            status_code=500,
+            content={"success": False, "message": str(e)}
+        )
+
+@app.post("/api/attendance/filter")
+async def filter_attendance(request: Request, filter_params: AttendanceFilter):
+    try:
+        session = login_required(request)
+        attendance_controller = AttendanceController()
+        attendance_records = await attendance_controller.filter(filter_params)
+        return attendance_records
+    except HTTPException as e:
+        return JSONResponse(
+            status_code=e.status_code,
+            content={"success": False, "message": e.detail}
+        )
+    except Exception as e:
+        return JSONResponse(
+            status_code=500,
+            content={"success": False, "message": str(e)}
+        )
+
+@app.get("/api/attendance/statistics")
+async def get_attendance_statistics(
+    request: Request, 
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None,
+    department: Optional[str] = None
+):
+    try:
+        session = login_required(request)
+        attendance_controller = AttendanceController()
+        statistics = await attendance_controller.get_statistics(start_date, end_date, department)
+        return statistics
+    except HTTPException as e:
+        return JSONResponse(
+            status_code=e.status_code,
+            content={"success": False, "message": e.detail}
+        )
+    except Exception as e:
+        return JSONResponse(
+            status_code=500,
+            content={"success": False, "message": str(e)}
+        )
+
+# Page routes for new features
+@app.get("/shifts")
+async def shifts_page(request: Request):
+    try:
+        session = admin_required(request)
+        return RedirectResponse(url="/static/pages/shifts.html")
+    except HTTPException:
+        return RedirectResponse(url="/login")
+
+@app.get("/reports")
+async def reports_page(request: Request):
+    try:
+        session = login_required(request)
+        return RedirectResponse(url="/static/pages/reports.html")
+    except HTTPException:
+        return RedirectResponse(url="/login")
+
+@app.post("/api/check-directory")
+async def check_directory(request: Request, data: dict):
+    try:
+        session = login_required(request)
+        directory = data.get("directory")
+        
+        if not directory:
+            return {"success": False, "message": "Directory name is required"}
+        
+        # Check if directory exists
+        if not os.path.exists(directory):
+            # Create directory
+            os.makedirs(directory)
+            return {"success": True, "message": f"Directory {directory} created successfully", "created": True}
+        
+        return {"success": True, "message": f"Directory {directory} already exists", "created": False}
+    except HTTPException as e:
+        return JSONResponse(
+            status_code=e.status_code,
+            content={"success": False, "message": e.detail}
+        )
+    except Exception as e:
+        return JSONResponse(
+            status_code=500,
+            content={"success": False, "message": str(e)}
+        )
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)

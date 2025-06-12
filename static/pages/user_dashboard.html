@@ -6,124 +6,296 @@
     <title>User Dashboard - Hệ thống điểm danh</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="/static/css/style.css">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #f8f9fa;
+        }
+        .main-container {
+            display: flex;
+            min-height: 100vh;
+        }
+        /* Sidebar Styles */
+        .sidebar {
+            width: 250px;
+            background-color: #2c3e50;
+            color: white;
+            height: 100vh;
+            position: fixed;
+            left: 0;
+            top: 0;
+            overflow-y: auto;
+            z-index: 1000;
+        }
+        .sidebar .nav-link {
+            color: white;
+            padding: 15px 20px;
+            display: flex;
+            align-items: center;
+            text-decoration: none;
+            transition: all 0.3s;
+        }
+        .sidebar .nav-link:hover, .sidebar .nav-link.active {
+            background-color: #34495e;
+            border-left: 4px solid #3498db;
+            padding-left: 16px;
+        }
+        .sidebar .nav-link i {
+            margin-right: 10px;
+            width: 20px;
+            text-align: center;
+        }
+        .logo-container {
+            padding: 20px;
+            text-align: center;
+            margin-bottom: 20px;
+            border-bottom: 1px solid #34495e;
+        }
+        .logo-container .user-avatar {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            margin: 0 auto 10px;
+            border: 2px solid #3498db;
+            background-color: #34495e;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 36px;
+        }
+        .logo-container h4 {
+            color: white;
+            margin: 0;
+            font-size: 1.2rem;
+        }
+        .logo-container p {
+            color: #95a5a6;
+            margin: 5px 0 0 0;
+            font-size: 0.9rem;
+        }
+        .nav-section {
+            margin-bottom: 15px;
+        }
+        .nav-section-title {
+            color: #95a5a6;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            padding: 10px 20px;
+            margin: 0;
+            letter-spacing: 1px;
+        }
+        .bottom-section {
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+            padding: 20px;
+            background-color: #243442;
+            border-top: 1px solid #34495e;
+        }
+        .user-info {
+            display: flex;
+            align-items: center;
+            padding: 10px;
+            border-radius: 5px;
+            background-color: #2c3e50;
+            margin-bottom: 10px;
+        }
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            margin-right: 10px;
+            background-color: #34495e;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid #3498db;
+        }
+        .user-details {
+            flex-grow: 1;
+            overflow: hidden;
+        }
+        .user-name {
+            color: white;
+            margin: 0;
+            font-size: 0.9rem;
+            font-weight: 500;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .user-role {
+            color: #95a5a6;
+            margin: 0;
+            font-size: 0.8rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        /* Content Area Styles */
+        .content-area {
+            margin-left: 250px;
+            flex-grow: 1;
+            padding: 20px;
+        }
+        .card {
+            border: none;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+        .profile-image {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            object-fit: cover;
+            margin: 0 auto 15px;
+            display: block;
+            border: 3px solid #3498db;
+        }
+        .status-icon {
+            font-size: 3rem;
+            margin-bottom: 10px;
+        }
+        .attendance-status {
+            text-align: center;
+        }
+    </style>
 </head>
 <body>
-    <!-- Sidebar -->
-    <div class="sidebar">
-        <div class="sidebar-header">
-            <i class="fas fa-user-clock fa-3x text-white"></i>
-            <h5 class="text-white mt-2">User Dashboard</h5>
-        </div>
-        <nav>
-            <a href="/user_dashboard" class="active"><i class="fas fa-home"></i> <span>Dashboard</span></a>
-            <a href="/user_profile"><i class="fas fa-user"></i> <span>Hồ sơ cá nhân</span></a>
-            <a href="/user_attendance"><i class="fas fa-clock"></i> <span>Lịch sử điểm danh</span></a>
-            <a href="#" id="logout-btn"><i class="fas fa-sign-out-alt"></i> <span>Đăng xuất</span></a>
-        </nav>
-    </div>
-
-    <!-- Top Navbar -->
-    <nav class="navbar">
-        <div class="container-fluid">
-            <div class="ms-auto">
-                <div class="dropdown">
-                    <button class="dropdown-toggle" type="button" id="userDropdown" data-bs-toggle="dropdown">
-                        <i class="fas fa-user-circle"></i> <span id="username-display">{{ request.session.get('full_name', 'User') }}</span>
-                    </button>
-                    <ul class="dropdown-menu dropdown-menu-end">
-                        <li><a class="dropdown-item" href="/user_profile">Hồ sơ</a></li>
-                        <li><hr class="dropdown-divider"></li>
-                        <li><a class="dropdown-item" href="#" id="navbar-logout">Đăng xuất</a></li>
-                    </ul>
+    <div class="main-container">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="logo-container">
+                <div class="user-avatar">
+                    <i class="fas fa-user"></i>
                 </div>
+                <h4>Face Attendance</h4>
+                <p>Employee Portal</p>
             </div>
-        </div>
-    </nav>
 
-    <!-- Main Content -->
-    <div class="main-content">
-        <h1 class="mb-4">Chào mừng, <span id="welcome-name">{{ request.session.get('full_name', 'User') }}</span></h1>
-        
-        <div class="row">
-            <!-- User Profile Card -->
-            <div class="col-md-4 mb-4">
-                <div class="card">
-                    <div class="card-body text-center">
-                        <img src="/static/images/default-avatar.png" alt="Profile Picture" class="profile-image" id="user-avatar">
-                        <h5 class="card-title" id="user-fullname">Đang tải...</h5>
-                        <p class="text-muted mb-3" id="user-position">Đang tải...</p>
-                        <div class="mb-2">
-                            <i class="fas fa-envelope me-2"></i><span id="user-email">Đang tải...</span>
-                        </div>
-                        <div class="mb-2">
-                            <i class="fas fa-phone me-2"></i><span id="user-phone">Đang tải...</span>
-                        </div>
-                        <div class="mb-3">
-                            <i class="fas fa-map-marker-alt me-2"></i><span id="user-address">Đang tải...</span>
-                        </div>
-                        <a href="/user_profile" class="btn btn-primary">
-                            <i class="fas fa-edit me-2"></i>Chỉnh sửa hồ sơ
-                        </a>
+            <div class="nav-section">
+                <h6 class="nav-section-title">Main Menu</h6>
+                <a class="nav-link active" href="/user_dashboard">
+                    <i class="fas fa-home"></i>
+                    <span>Dashboard</span>
+                </a>
+                <a class="nav-link" href="/user_attendance">
+                    <i class="fas fa-clock"></i>
+                    <span>Attendance History</span>
+                </a>
+            </div>
+
+            <div class="nav-section">
+                <h6 class="nav-section-title">Profile</h6>
+                <a class="nav-link" href="/user_profile">
+                    <i class="fas fa-user-circle"></i>
+                    <span>My Profile</span>
+                </a>
+            </div>
+
+            <div class="bottom-section">
+                <div class="user-info">
+                    <div class="user-avatar">
+                        <i class="fas fa-user"></i>
+                    </div>
+                    <div class="user-details">
+                        <p class="user-name" id="currentUsername">Employee</p>
+                        <p class="user-role" id="userRole">Staff</p>
                     </div>
                 </div>
+                <button class="logout-btn" id="logoutBtn">
+                    <i class="fas fa-sign-out-alt"></i>
+                    Logout
+                </button>
             </div>
+        </div>
+
+        <!-- Content Area -->
+        <div class="content-area">
+            <h1 class="mb-4">Chào mừng, <span id="welcome-name">{{ request.session.get('full_name', 'User') }}</span></h1>
             
-            <!-- Attendance Status -->
-            <div class="col-md-4 mb-4">
-                <div class="card attendance-status">
-                    <div class="card-body">
-                        <h5 class="card-title">Trạng thái hôm nay</h5>
-                        <div id="attendance-status-container">
-                            <!-- Status will be loaded here -->
-                            <div class="text-center">
-                                <div class="spinner-border text-primary" role="status">
-                                    <span class="visually-hidden">Loading...</span>
+            <div class="row">
+                <!-- User Profile Card -->
+                <div class="col-md-4 mb-4">
+                    <div class="card">
+                        <div class="card-body text-center">
+                            <img src="/static/images/default-avatar.png" alt="Profile Picture" class="profile-image" id="user-avatar">
+                            <h5 class="card-title" id="user-fullname">Đang tải...</h5>
+                            <p class="text-muted mb-3" id="user-position">Đang tải...</p>
+                            <div class="mb-2">
+                                <i class="fas fa-envelope me-2"></i><span id="user-email">Đang tải...</span>
+                            </div>
+                            <div class="mb-2">
+                                <i class="fas fa-phone me-2"></i><span id="user-phone">Đang tải...</span>
+                            </div>
+                            <div class="mb-3">
+                                <i class="fas fa-map-marker-alt me-2"></i><span id="user-address">Đang tải...</span>
+                            </div>
+                            <a href="/user_profile" class="btn btn-primary">
+                                <i class="fas fa-edit me-2"></i>Chỉnh sửa hồ sơ
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Attendance Status -->
+                <div class="col-md-4 mb-4">
+                    <div class="card attendance-status">
+                        <div class="card-body">
+                            <h5 class="card-title">Trạng thái hôm nay</h5>
+                            <div id="attendance-status-container">
+                                <!-- Status will be loaded here -->
+                                <div class="text-center">
+                                    <div class="spinner-border text-primary" role="status">
+                                        <span class="visually-hidden">Loading...</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Monthly Stats -->
+                <div class="col-md-4 mb-4">
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title">Thống kê tháng</h5>
+                            <div id="monthly-stats-container">
+                                <!-- Stats will be loaded here -->
+                                <div class="text-center">
+                                    <div class="spinner-border text-primary" role="status">
+                                        <span class="visually-hidden">Loading...</span>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
-            
-            <!-- Monthly Stats -->
-            <div class="col-md-4 mb-4">
-                <div class="card">
-                    <div class="card-body">
-                        <h5 class="card-title">Thống kê tháng</h5>
-                        <div id="monthly-stats-container">
-                            <!-- Stats will be loaded here -->
-                            <div class="text-center">
-                                <div class="spinner-border text-primary" role="status">
-                                    <span class="visually-hidden">Loading...</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
 
-        <!-- Recent Attendance History -->
-        <div class="row">
-            <div class="col-12">
-                <div class="card">
-                    <div class="card-body">
-                        <h5 class="card-title">Lịch sử điểm danh gần đây</h5>
-                        <div class="table-responsive">
-                            <table class="table">
-                                <thead>
-                                    <tr>
-                                        <th>Ngày</th>
-                                        <th>Giờ vào</th>
-                                        <th>Giờ ra</th>
-                                        <th>Trạng thái</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="attendance-history">
-                                    <!-- History will be loaded here -->
-                                </tbody>
-                            </table>
+            <!-- Recent Attendance History -->
+            <div class="row">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title">Lịch sử điểm danh gần đây</h5>
+                            <div class="table-responsive">
+                                <table class="table">
+                                    <thead>
+                                        <tr>
+                                            <th>Ngày</th>
+                                            <th>Giờ vào</th>
+                                            <th>Giờ ra</th>
+                                            <th>Trạng thái</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="attendance-history">
+                                        <!-- History will be loaded here -->
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -143,14 +315,15 @@
             loadAttendanceHistory();
             
             // Xử lý đăng xuất
-            document.getElementById('logout-btn').addEventListener('click', logout);
-            document.getElementById('navbar-logout').addEventListener('click', logout);
+            document.getElementById('logoutBtn').addEventListener('click', logout);
         });
         
         // Hàm đăng xuất
         async function logout() {
             try {
-                const response = await fetch('/api/logout');
+                const response = await fetch('/api/logout', {
+                    method: 'POST'
+                });
                 if (response.ok) {
                     window.location.href = '/login';
                 }
@@ -167,6 +340,9 @@
                 if (response.ok) {
                     const user = await response.json();
                     
+                    document.getElementById('welcome-name').textContent = user.full_name || 'User';
+                    document.getElementById('currentUsername').textContent = user.full_name || user.username;
+                    document.getElementById('userRole').textContent = user.position || 'Employee';
                     document.getElementById('user-fullname').textContent = user.full_name || 'N/A';
                     document.getElementById('user-position').textContent = user.position || 'N/A';
                     document.getElementById('user-email').textContent = user.email || 'N/A';
@@ -198,28 +374,30 @@
                         `;
                     } else {
                         container.innerHTML = `
-                            <div class="status-icon text-danger">
-                                <i class="fas fa-times-circle"></i>
+                            <div class="status-icon text-warning">
+                                <i class="fas fa-exclamation-circle"></i>
                             </div>
                             <h4>Chưa điểm danh</h4>
-                            <p class="text-muted">Vui lòng điểm danh khi đến</p>
+                            <p class="text-muted">Vui lòng điểm danh khi đến nơi làm việc</p>
                         `;
                     }
                 } else {
                     container.innerHTML = `
-                        <div class="text-center text-danger">
-                            <i class="fas fa-exclamation-triangle fa-2x mb-3"></i>
-                            <p>Không thể tải thông tin điểm danh</p>
+                        <div class="status-icon text-danger">
+                            <i class="fas fa-times-circle"></i>
                         </div>
+                        <h4>Lỗi tải dữ liệu</h4>
+                        <p class="text-muted">Vui lòng thử lại sau</p>
                     `;
                 }
             } catch (error) {
                 console.error('Lỗi tải trạng thái điểm danh:', error);
                 document.getElementById('attendance-status-container').innerHTML = `
-                    <div class="text-center text-danger">
-                        <i class="fas fa-exclamation-triangle fa-2x mb-3"></i>
-                        <p>Lỗi kết nối máy chủ</p>
+                    <div class="status-icon text-danger">
+                        <i class="fas fa-times-circle"></i>
                     </div>
+                    <h4>Lỗi tải dữ liệu</h4>
+                    <p class="text-muted">Vui lòng thử lại sau</p>
                 `;
             }
         }
@@ -227,119 +405,92 @@
         // Hàm tải thống kê tháng
         async function loadMonthlyStats() {
             try {
-                const response = await fetch('/api/attendance/stats/monthly');
+                const response = await fetch('/api/attendance/stats/user');
                 
                 const container = document.getElementById('monthly-stats-container');
                 
                 if (response.ok) {
-                    const stats = await response.json();
-                    
-                    const presentPercentage = (stats.present_days / stats.total_days) * 100;
-                    const onTimePercentage = stats.present_days > 0 ? (stats.on_time / stats.present_days) * 100 : 0;
+                    const data = await response.json();
                     
                     container.innerHTML = `
-                        <div class="mb-3">
-                            <h6>Ngày có mặt</h6>
-                            <div class="progress mb-2">
-                                <div class="progress-bar" role="progressbar" 
-                                     style="width: ${presentPercentage}%">
-                                    ${stats.present_days}/${stats.total_days}
-                                </div>
+                        <div class="row text-center">
+                            <div class="col-4">
+                                <h4 class="text-success">${data.on_time || 0}</h4>
+                                <p class="text-muted">Đúng giờ</p>
                             </div>
-                            <small class="text-muted">${presentPercentage.toFixed(1)}% ngày làm việc</small>
-                        </div>
-                        <div class="mb-3">
-                            <h6>Đúng giờ</h6>
-                            <div class="progress mb-2">
-                                <div class="progress-bar bg-success" role="progressbar" 
-                                     style="width: ${onTimePercentage}%">
-                                    ${stats.on_time}/${stats.present_days}
-                                </div>
+                            <div class="col-4">
+                                <h4 class="text-warning">${data.late || 0}</h4>
+                                <p class="text-muted">Trễ</p>
                             </div>
-                            <small class="text-muted">${onTimePercentage.toFixed(1)}% ngày đúng giờ</small>
+                            <div class="col-4">
+                                <h4 class="text-danger">${data.absent || 0}</h4>
+                                <p class="text-muted">Vắng</p>
+                            </div>
                         </div>
                     `;
                 } else {
-                    container.innerHTML = `
-                        <div class="text-center text-danger">
-                            <i class="fas fa-exclamation-triangle fa-2x mb-3"></i>
-                            <p>Không thể tải thống kê</p>
-                        </div>
-                    `;
+                    container.innerHTML = `<p class="text-center text-muted">Không có dữ liệu</p>`;
                 }
             } catch (error) {
                 console.error('Lỗi tải thống kê tháng:', error);
-                document.getElementById('monthly-stats-container').innerHTML = `
-                    <div class="text-center text-danger">
-                        <i class="fas fa-exclamation-triangle fa-2x mb-3"></i>
-                        <p>Lỗi kết nối máy chủ</p>
-                    </div>
-                `;
+                document.getElementById('monthly-stats-container').innerHTML = `<p class="text-center text-muted">Không có dữ liệu</p>`;
             }
         }
         
         // Hàm tải lịch sử điểm danh
         async function loadAttendanceHistory() {
             try {
-                const response = await fetch('/api/attendance/history');
+                const response = await fetch('/api/attendance/history/user');
                 
-                const tableBody = document.getElementById('attendance-history');
+                const historyTable = document.getElementById('attendance-history');
                 
                 if (response.ok) {
-                    const history = await response.json();
+                    const data = await response.json();
                     
-                    if (history.length === 0) {
-                        tableBody.innerHTML = `
-                            <tr>
-                                <td colspan="4" class="text-center">Không có dữ liệu điểm danh</td>
-                            </tr>
-                        `;
-                    } else {
-                        tableBody.innerHTML = history.map(record => `
+                    if (data && data.length > 0) {
+                        historyTable.innerHTML = data.map(record => `
                             <tr>
                                 <td>${record.date}</td>
-                                <td>${record.check_in_time || 'N/A'}</td>
-                                <td>${record.check_out_time || 'N/A'}</td>
+                                <td>${record.check_in_time || '-'}</td>
+                                <td>${record.check_out_time || '-'}</td>
                                 <td>
-                                    ${getStatusBadge(record.status)}
+                                    <span class="badge ${getStatusBadgeClass(record.status)}">
+                                        ${getStatusText(record.status)}
+                                    </span>
                                 </td>
                             </tr>
                         `).join('');
+                    } else {
+                        historyTable.innerHTML = `<tr><td colspan="4" class="text-center">Không có dữ liệu điểm danh</td></tr>`;
                     }
                 } else {
-                    tableBody.innerHTML = `
-                        <tr>
-                            <td colspan="4" class="text-center text-danger">
-                                <i class="fas fa-exclamation-triangle me-2"></i>
-                                Không thể tải lịch sử điểm danh
-                            </td>
-                        </tr>
-                    `;
+                    historyTable.innerHTML = `<tr><td colspan="4" class="text-center">Không thể tải dữ liệu</td></tr>`;
                 }
             } catch (error) {
                 console.error('Lỗi tải lịch sử điểm danh:', error);
-                document.getElementById('attendance-history').innerHTML = `
-                    <tr>
-                        <td colspan="4" class="text-center text-danger">
-                            <i class="fas fa-exclamation-triangle me-2"></i>
-                            Lỗi kết nối máy chủ
-                        </td>
-                    </tr>
-                `;
+                document.getElementById('attendance-history').innerHTML = `<tr><td colspan="4" class="text-center">Không thể tải dữ liệu</td></tr>`;
             }
         }
         
-        // Hàm tạo badge trạng thái
-        function getStatusBadge(status) {
-            switch (status) {
-                case 'on_time':
-                    return '<span class="badge bg-success">Đúng giờ</span>';
-                case 'late':
-                    return '<span class="badge bg-warning">Muộn</span>';
-                case 'absent':
-                    return '<span class="badge bg-danger">Vắng mặt</span>';
-                default:
-                    return '<span class="badge bg-secondary">N/A</span>';
+        // Hàm lấy class cho badge trạng thái
+        function getStatusBadgeClass(status) {
+            switch(status) {
+                case 'on_time': return 'bg-success';
+                case 'late': return 'bg-warning';
+                case 'very_late': return 'bg-warning text-dark';
+                case 'absent': return 'bg-danger';
+                default: return 'bg-secondary';
+            }
+        }
+        
+        // Hàm lấy text cho trạng thái
+        function getStatusText(status) {
+            switch(status) {
+                case 'on_time': return 'Đúng giờ';
+                case 'late': return 'Trễ';
+                case 'very_late': return 'Rất trễ';
+                case 'absent': return 'Vắng mặt';
+                default: return 'Không xác định';
             }
         }
     </script>

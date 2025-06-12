@@ -1,0 +1,20 @@
+[
+  {
+    "id": 1,
+    "name": "Ca sáng",
+    "start_time": "08:00",
+    "end_time": "12:00"
+  },
+  {
+    "id": 2,
+    "name": "Ca chiều",
+    "start_time": "13:00",
+    "end_time": "17:00"
+  },
+  {
+    "id": 3,
+    "name": "Ca tối",
+    "start_time": "18:00",
+    "end_time": "22:00"
+  }
+]

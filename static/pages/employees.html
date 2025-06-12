@@ -16,143 +16,6 @@
             display: flex;
             min-height: 100vh;
         }
-        /* Sidebar Styles */
-        .sidebar {
-            width: 250px;
-            background-color: #2c3e50;
-            color: white;
-            height: 100vh;
-            position: fixed;
-            left: 0;
-            top: 0;
-            overflow-y: auto;
-            z-index: 1000;
-        }
-        .sidebar .nav-link {
-            color: white;
-            padding: 15px 20px;
-            display: flex;
-            align-items: center;
-            text-decoration: none;
-            transition: all 0.3s;
-        }
-        .sidebar .nav-link:hover, .sidebar .nav-link.active {
-            background-color: #34495e;
-            border-left: 4px solid #3498db;
-            padding-left: 16px;
-        }
-        .sidebar .nav-link i {
-            margin-right: 10px;
-            width: 20px;
-            text-align: center;
-        }
-        .logo-container {
-            padding: 20px;
-            text-align: center;
-            margin-bottom: 20px;
-            border-bottom: 1px solid #34495e;
-        }
-        .logo-container .user-avatar {
-            width: 80px;
-            height: 80px;
-            border-radius: 50%;
-            margin: 0 auto 10px;
-            border: 2px solid #3498db;
-            background-color: #34495e;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 36px;
-        }
-        .logo-container h4 {
-            color: white;
-            margin: 0;
-            font-size: 1.2rem;
-        }
-        .logo-container p {
-            color: #95a5a6;
-            margin: 5px 0 0 0;
-            font-size: 0.9rem;
-        }
-        .nav-section {
-            margin-bottom: 15px;
-        }
-        .nav-section-title {
-            color: #95a5a6;
-            font-size: 0.8rem;
-            text-transform: uppercase;
-            padding: 10px 20px;
-            margin: 0;
-            letter-spacing: 1px;
-        }
-        .bottom-section {
-            position: absolute;
-            bottom: 0;
-            width: 100%;
-            padding: 20px;
-            background-color: #243442;
-            border-top: 1px solid #34495e;
-        }
-        .user-info {
-            display: flex;
-            align-items: center;
-            padding: 10px;
-            border-radius: 5px;
-            background-color: #2c3e50;
-            margin-bottom: 10px;
-        }
-        .user-avatar {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            margin-right: 10px;
-            background-color: #34495e;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border: 1px solid #3498db;
-        }
-        .user-details {
-            flex-grow: 1;
-            overflow: hidden;
-        }
-        .user-name {
-            color: white;
-            margin: 0;
-            font-size: 0.9rem;
-            font-weight: 500;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-        .user-role {
-            color: #95a5a6;
-            margin: 0;
-            font-size: 0.8rem;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-        .logout-btn {
-            padding: 8px 12px;
-            background-color: #c0392b;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 0.9rem;
-            width: 100%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: background-color 0.3s;
-        }
-        .logout-btn i {
-            margin-right: 8px;
-        }
-        .logout-btn:hover {
-            background-color: #e74c3c;
-        }
         /* Content Area Styles */
         .content-area {
             margin-left: 250px;
@@ -321,68 +184,8 @@
 </head>
 <body>
     <div class="main-container">
-        <!-- Sidebar -->
-        <div class="sidebar">
-            <div class="logo-container">
-                <div class="user-avatar">
-                    <i class="fas fa-user"></i>
-                </div>
-                <h4>Face Attendance</h4>
-                <p>Management System</p>
-            </div>
-
-            <div class="nav-section">
-                <h6 class="nav-section-title">Main Menu</h6>
-                <a class="nav-link" href="/dashboard">
-                    <i class="fas fa-home"></i>
-                    <span>Dashboard</span>
-                </a>
-                <a class="nav-link" href="/verify">
-                    <i class="fas fa-camera"></i>
-                    <span>Verify Attendance</span>
-                </a>
-            </div>
-
-            <div class="nav-section">
-                <h6 class="nav-section-title">Employee Management</h6>
-                <a class="nav-link" href="/add_employee">
-                    <i class="fas fa-user-plus"></i>
-                    <span>Add Employee</span>
-                </a>
-                <a class="nav-link active" href="/employees">
-                    <i class="fas fa-users"></i>
-                    <span>Employee List</span>
-            </a>
-            </div>
-
-            <div class="nav-section">
-                <h6 class="nav-section-title">Reports</h6>
-                <a class="nav-link" href="/reports/daily">
-                    <i class="fas fa-calendar-day"></i>
-                    <span>Daily Report</span>
-                </a>
-                <a class="nav-link" href="/reports/monthly">
-                    <i class="fas fa-calendar-alt"></i>
-                    <span>Monthly Report</span>
-                </a>
-            </div>
-
-            <div class="bottom-section">
-                <div class="user-info">
-                    <div class="user-avatar">
-                        <i class="fas fa-user"></i>
-                    </div>
-                    <div class="user-details">
-                        <p class="user-name" id="currentUsername">Admin User</p>
-                        <p class="user-role" id="userRole">Administrator</p>
-                    </div>
-                </div>
-                <button class="logout-btn" id="logoutBtn">
-                    <i class="fas fa-sign-out-alt"></i>
-                    Logout
-            </button>
-            </div>
-        </div>
+        <!-- Include Sidebar -->
+        <div id="sidebar-container"></div>
 
         <!-- Content Area -->
         <div class="content-area">
@@ -405,11 +208,12 @@
                         
                         <button id="trainModelBtn" class="btn btn-warning">
                             <i class="fas fa-cogs me-2"></i>Train Model
-                    </button>
+                        </button>
                         
                         <a href="/add_employee" class="btn btn-primary">
                             <i class="fas fa-user-plus me-2"></i>Add Employee
-                    </a>
+                        </a>
+                    </div>
                 </div>
             </div>
             
@@ -594,6 +398,48 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
+
+        // Load sidebar
+        function loadSidebar() {
+            return fetch('/static/pages/sidebar.html')
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`Failed to load sidebar: ${response.status} ${response.statusText}`);
+                    }
+                    return response.text();
+                })
+                .then(html => {
+                    console.log('Sidebar HTML loaded successfully');
+                    const sidebarContainer = document.getElementById('sidebar-container');
+                    if (!sidebarContainer) {
+                        console.error('Sidebar container not found in the DOM');
+                        return;
+                    }
+                    
+                    sidebarContainer.innerHTML = html;
+                    
+                    // Highlight current page in sidebar after it's loaded
+                    const currentPath = window.location.pathname;
+                    const navLinks = document.querySelectorAll('.nav-link');
+                    
+                    navLinks.forEach(link => {
+                        if (link.getAttribute('href') === currentPath) {
+                            link.classList.add('active');
+                        } else {
+                            link.classList.remove('active');
+                        }
+                    });
+                    
+                    // Setup logout button
+                    setupLogoutButton();
+                    
+                    return true;
+                })
+                .catch(error => {
+                    console.error('Error loading sidebar:', error);
+                    return false;
+                });
+        }
         // Global variables
         const employeeList = document.getElementById('employee-list');
         const employeeModal = new bootstrap.Modal(document.getElementById('employeeModal'));
@@ -606,42 +452,112 @@
         // Load user info
         async function loadUserInfo() {
             try {
+                console.log('Loading user info...');
                 const response = await fetch('/api/user');
+                console.log('User info response status:', response.status);
+                if (!response.ok) {
+                    throw new Error(`Failed to load user info: ${response.status} ${response.statusText}`);
+                }
                 const data = await response.json();
-                document.getElementById('currentUsername').textContent = data.full_name || data.username;
-                document.getElementById('userRole').textContent = data.position === 'admin' ? 'Administrator' : 'Employee';
+                console.log('User info received:', data);
+                
+                // Check if sidebar elements exist before updating
+                const usernameElement = document.getElementById('currentUsername');
+                const roleElement = document.getElementById('userRole');
+                
+                if (usernameElement) {
+                    usernameElement.textContent = data.full_name || data.username;
+                }
+                if (roleElement) {
+                    roleElement.textContent = data.position === 'admin' ? 'Administrator' : 'Employee';
+                }
+                
+                // Check if user is admin, redirect if not
+                if (data.position !== 'admin') {
+                    console.warn('User is not an admin, redirecting to dashboard');
+                    window.location.href = '/user_dashboard';
+                    return false;
+                }
+                
+                return true;
             } catch (error) {
                 console.error('Error loading user info:', error);
+                alert('Error loading user information. Please try logging in again.');
+                window.location.href = '/login';
+                return false;
             }
         }
 
-        // Handle logout
-        document.getElementById('logoutBtn').addEventListener('click', async function() {
-            try {
-                loadingSpinner.style.display = 'flex';
-                const response = await fetch('/api/logout', {
-                    method: 'POST'
+        // Handle logout - will be set up after sidebar is loaded
+        function setupLogoutButton() {
+            const logoutBtn = document.getElementById('logoutBtn');
+            if (logoutBtn) {
+                logoutBtn.addEventListener('click', async function() {
+                    try {
+                        loadingSpinner.style.display = 'flex';
+                        const response = await fetch('/api/logout', {
+                            method: 'POST'
+                        });
+                        if (response.ok) {
+                            window.location.href = '/login';
+                        }
+                    } catch (error) {
+                        console.error('Error during logout:', error);
+                    } finally {
+                        loadingSpinner.style.display = 'none';
+                    }
                 });
-                if (response.ok) {
-                    window.location.href = '/login';
-                }
-            } catch (error) {
-                console.error('Error during logout:', error);
-            } finally {
-                loadingSpinner.style.display = 'none';
+                console.log('Logout button event listener attached');
+            } else {
+                console.warn('Logout button not found in the DOM');
             }
-        });
+        }
 
         // Load employees
         async function loadEmployees() {
             try {
+                console.log('Loading employees...');
                 loadingSpinner.style.display = 'flex';
-                const response = await fetch('/api/employees');
-                if (!response.ok) {
-                    throw new Error('Failed to load employees');
+                
+                // Use credentials to ensure cookies are sent
+                const response = await fetch('/api/employees', {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json'
+                    },
+                    credentials: 'include' // Important for session cookies
+                });
+                
+                console.log('API response status:', response.status);
+                
+                // Handle unauthorized or forbidden
+                if (response.status === 401) {
+                    console.error('Unauthorized access. Redirecting to login...');
+                    window.location.href = '/login';
+                    return;
                 }
                 
-                employees = await response.json();
+                if (response.status === 403) {
+                    console.error('Forbidden access. User is not admin.');
+                    window.location.href = '/user_dashboard';
+                    return;
+                }
+                
+                if (!response.ok) {
+                    throw new Error(`Failed to load employees: ${response.status} ${response.statusText}`);
+                }
+                
+                const data = await response.json();
+                console.log('Received employees data:', data);
+                
+                // Check if data is an array
+                if (!Array.isArray(data)) {
+                    console.error('Expected array of employees but got:', data);
+                    throw new Error('Invalid data format received from server');
+                }
+                
+                employees = data;
                 renderEmployees();
             } catch (error) {
                 console.error('Error loading employees:', error);
@@ -649,7 +565,7 @@
                     <tr>
                         <td colspan="6" class="text-center py-4 text-danger">
                             <i class="fas fa-exclamation-circle me-2"></i>
-                            Error loading employees. Please try again.
+                            ${error.message || 'Error loading employees. Please try again.'}
                         </td>
                     </tr>
                 `;
@@ -965,14 +881,31 @@
         }
 
         // Initialize
-        document.addEventListener('DOMContentLoaded', function() {
-            loadUserInfo();
-            loadEmployees();
-            checkUrlParams();
+        document.addEventListener('DOMContentLoaded', async function() {
+            console.log('DOM content loaded, initializing...');
             
-            // Set global functions
-            window.openEditModal = openEditModal;
-            window.openDeleteModal = openDeleteModal;
+            try {
+                // First load the sidebar
+                console.log('Loading sidebar...');
+                await loadSidebar();
+                
+                // Then load user info and check authentication
+                const isAuthenticated = await loadUserInfo();
+                
+                // Only proceed if authenticated
+                if (isAuthenticated) {
+                    console.log('User authenticated, loading employees...');
+                    await loadEmployees();
+                    checkUrlParams();
+                    
+                    // Set global functions
+                    window.openEditModal = openEditModal;
+                    window.openDeleteModal = openDeleteModal;
+                }
+            } catch (error) {
+                console.error('Error during initialization:', error);
+                alert('An error occurred while loading the page. Please try refreshing.');
+            }
         });
     </script>
 </body>

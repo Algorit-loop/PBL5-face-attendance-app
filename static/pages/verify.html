@@ -16,143 +16,6 @@
             display: flex;
             min-height: 100vh;
         }
-        /* Sidebar Styles */
-        .sidebar {
-            width: 250px;
-            background-color: #2c3e50;
-            color: white;
-            height: 100vh;
-            position: fixed;
-            left: 0;
-            top: 0;
-            overflow-y: auto;
-            z-index: 1000;
-        }
-        .sidebar .nav-link {
-            color: white;
-            padding: 15px 20px;
-            display: flex;
-            align-items: center;
-            text-decoration: none;
-            transition: all 0.3s;
-        }
-        .sidebar .nav-link:hover, .sidebar .nav-link.active {
-            background-color: #34495e;
-            border-left: 4px solid #3498db;
-            padding-left: 16px;
-        }
-        .sidebar .nav-link i {
-            margin-right: 10px;
-            width: 20px;
-            text-align: center;
-        }
-        .logo-container {
-            padding: 20px;
-            text-align: center;
-            margin-bottom: 20px;
-            border-bottom: 1px solid #34495e;
-        }
-        .logo-container .user-avatar {
-            width: 80px;
-            height: 80px;
-            border-radius: 50%;
-            margin: 0 auto 10px;
-            border: 2px solid #3498db;
-            background-color: #34495e;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 36px;
-        }
-        .logo-container h4 {
-            color: white;
-            margin: 0;
-            font-size: 1.2rem;
-        }
-        .logo-container p {
-            color: #95a5a6;
-            margin: 5px 0 0 0;
-            font-size: 0.9rem;
-        }
-        .nav-section {
-            margin-bottom: 15px;
-        }
-        .nav-section-title {
-            color: #95a5a6;
-            font-size: 0.8rem;
-            text-transform: uppercase;
-            padding: 10px 20px;
-            margin: 0;
-            letter-spacing: 1px;
-        }
-        .bottom-section {
-            position: absolute;
-            bottom: 0;
-            width: 100%;
-            padding: 20px;
-            background-color: #243442;
-            border-top: 1px solid #34495e;
-        }
-        .user-info {
-            display: flex;
-            align-items: center;
-            padding: 10px;
-            border-radius: 5px;
-            background-color: #2c3e50;
-            margin-bottom: 10px;
-        }
-        .user-avatar {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            margin-right: 10px;
-            background-color: #34495e;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border: 1px solid #3498db;
-        }
-        .user-details {
-            flex-grow: 1;
-            overflow: hidden;
-        }
-        .user-name {
-            color: white;
-            margin: 0;
-            font-size: 0.9rem;
-            font-weight: 500;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-        .user-role {
-            color: #95a5a6;
-            margin: 0;
-            font-size: 0.8rem;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-        .logout-btn {
-            padding: 8px 12px;
-            background-color: #c0392b;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 0.9rem;
-            width: 100%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: background-color 0.3s;
-        }
-        .logout-btn i {
-            margin-right: 8px;
-        }
-        .logout-btn:hover {
-            background-color: #e74c3c;
-        }
         /* Content Area Styles */
         .content-area {
             margin-left: 250px;
@@ -242,68 +105,8 @@
 </head>
 <body>
     <div class="main-container">
-        <!-- Sidebar -->
-        <div class="sidebar">
-            <div class="logo-container">
-                <div class="user-avatar">
-                    <i class="fas fa-user"></i>
-                </div>
-                <h4>Face Attendance</h4>
-                <p>Management System</p>
-            </div>
-
-            <div class="nav-section">
-                <h6 class="nav-section-title">Main Menu</h6>
-                <a class="nav-link" href="/dashboard">
-                    <i class="fas fa-home"></i>
-                    <span>Dashboard</span>
-                </a>
-                <a class="nav-link active" href="/verify">
-                    <i class="fas fa-camera"></i>
-                    <span>Verify Attendance</span>
-                </a>
-            </div>
-
-            <div class="nav-section">
-                <h6 class="nav-section-title">Employee Management</h6>
-                <a class="nav-link" href="/add_employee">
-                    <i class="fas fa-user-plus"></i>
-                    <span>Add Employee</span>
-                </a>
-                <a class="nav-link" href="/employees">
-                    <i class="fas fa-users"></i>
-                    <span>Employee List</span>
-                </a>
-            </div>
-
-            <div class="nav-section">
-                <h6 class="nav-section-title">Reports</h6>
-                <a class="nav-link" href="/reports/daily">
-                    <i class="fas fa-calendar-day"></i>
-                    <span>Daily Report</span>
-                </a>
-                <a class="nav-link" href="/reports/monthly">
-                    <i class="fas fa-calendar-alt"></i>
-                    <span>Monthly Report</span>
-                </a>
-            </div>
-
-            <div class="bottom-section">
-                <div class="user-info">
-                    <div class="user-avatar">
-                        <i class="fas fa-user"></i>
-                    </div>
-                    <div class="user-details">
-                        <p class="user-name" id="currentUsername">Admin User</p>
-                        <p class="user-role" id="userRole">Administrator</p>
-                    </div>
-                </div>
-                <button class="logout-btn" id="logoutBtn">
-                    <i class="fas fa-sign-out-alt"></i>
-                    Logout
-            </button>
-            </div>
-        </div>
+        <!-- Include Sidebar -->
+        <div id="sidebar-container"></div>
 
         <!-- Content Area -->
         <div class="content-area">
@@ -342,7 +145,24 @@
                             <label class="form-label">Chức vụ</label>
                             <input type="text" class="form-control" id="empPosition" readonly value="-">
                         </div>
+                        <div class="mb-3" id="shiftSelector" style="display: none;">
+                            <label class="form-label">Ca làm việc</label>
+                            <select class="form-select" id="shiftId">
+                                <option value="" disabled selected>Chọn ca làm việc</option>
+                                <!-- Shifts will be loaded dynamically -->
+                            </select>
+                        </div>
                     </div>
+                    <div id="manualEntryForm" style="display: none;" class="mb-3">
+                        <div class="input-group mb-2">
+                            <input type="text" class="form-control" id="manualEmployeeId" placeholder="Nhập ID nhân viên">
+                            <button class="btn btn-primary" id="searchEmployeeBtn">
+                                <i class="fas fa-search me-2"></i>Tìm
+                            </button>
+                        </div>
+                        <div class="text-danger small" id="manualEntryError" style="display: none;"></div>
+                    </div>
+                    
                     <div class="action-buttons">
                         <button class="btn btn-success mb-2" id="acceptBtn" disabled>
                             <i class="fas fa-check me-2"></i>Xác nhận
@@ -350,8 +170,11 @@
                         <button class="btn btn-danger mb-2" id="rejectBtn" disabled>
                             <i class="fas fa-times me-2"></i>Từ chối
                         </button>
-                        <button class="btn btn-secondary" id="cancelBtn" style="display: none;">
+                        <button class="btn btn-secondary mb-2" id="cancelBtn" style="display: none;">
                             <i class="fas fa-ban me-2"></i>Hủy bỏ
+                        </button>
+                        <button class="btn btn-info" id="manualEntryBtn" style="display: none;">
+                            <i class="fas fa-keyboard me-2"></i>Nhập thủ công
                         </button>
                     </div>
                 </div>
@@ -368,18 +191,68 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
+        // Load sidebar
+        document.addEventListener('DOMContentLoaded', function() {
+            fetch('/static/pages/sidebar.html')
+                .then(response => response.text())
+                .then(html => {
+                    document.getElementById('sidebar-container').innerHTML = html;
+                    
+                    // Highlight current page in sidebar after it's loaded
+                    const currentPath = window.location.pathname;
+                    const navLinks = document.querySelectorAll('.nav-link');
+                    
+                    navLinks.forEach(link => {
+                        if (link.getAttribute('href') === currentPath) {
+                            link.classList.add('active');
+                        } else {
+                            link.classList.remove('active');
+                        }
+                    });
+            
+                    // Add event listener to logout button
+                    document.getElementById('logoutBtn').addEventListener('click', async function() {
+                        try {
+                            loadingSpinner.style.display = 'flex';
+                            const response = await fetch('/api/logout', {
+                                method: 'POST'
+                            });
+                            if (response.ok) {
+                                window.location.href = '/login';
+                            }
+                        } catch (error) {
+                            console.error('Error during logout:', error);
+                        } finally {
+                            loadingSpinner.style.display = 'none';
+                        }
+                    });
+                })
+                .catch(error => {
+                    console.error('Error loading sidebar:', error);
+            });
+        });
+
         // Global variables
         const acceptBtn = document.getElementById('acceptBtn');
         const rejectBtn = document.getElementById('rejectBtn');
         const cancelBtn = document.getElementById('cancelBtn');
+        const manualEntryBtn = document.getElementById('manualEntryBtn');
+        const manualEntryForm = document.getElementById('manualEntryForm');
+        const searchEmployeeBtn = document.getElementById('searchEmployeeBtn');
+        const manualEmployeeId = document.getElementById('manualEmployeeId');
+        const manualEntryError = document.getElementById('manualEntryError');
         const statusBadge = document.getElementById('statusBadge');
         const loadingSpinner = document.querySelector('.loading-spinner');
+        const shiftSelector = document.getElementById('shiftSelector');
+        const shiftIdSelect = document.getElementById('shiftId');
         let verificationInterval = null;
         
         // Verification tracking variables
         let consecutiveRecognitions = 0;
         let currentEmployeeId = null;
         let isVerified = false;
+        let isManualMode = false;
+        let shifts = [];
         
         // Load user info
         async function loadUserInfo() {
@@ -392,24 +265,7 @@
                 console.error('Error loading user info:', error);
             }
         }
-
-        // Handle logout
-        document.getElementById('logoutBtn').addEventListener('click', async function() {
-            try {
-                loadingSpinner.style.display = 'flex';
-                const response = await fetch('/api/logout', {
-                    method: 'POST'
-                });
-                if (response.ok) {
-                    window.location.href = '/login';
-                }
-            } catch (error) {
-                console.error('Error during logout:', error);
-            } finally {
-                loadingSpinner.style.display = 'none';
-            }
-        });
-
+        
         // Update status
         function updateStatus(type, message) {
             statusBadge.className = `status-badge status-${type}`;
@@ -422,6 +278,9 @@
             document.getElementById('empName').value = employee.full_name || '-';
             document.getElementById('empDepartment').value = employee.department || '-';
             document.getElementById('empPosition').value = employee.position || '-';
+            
+            // Show shift selector when employee is verified
+            shiftSelector.style.display = 'block';
         }
 
         // Reset employee info
@@ -433,9 +292,15 @@
             acceptBtn.disabled = true;
             rejectBtn.disabled = true;
             cancelBtn.style.display = 'none';
+            manualEntryBtn.style.display = isManualMode ? 'none' : 'block';
+            shiftSelector.style.display = 'none';
+            shiftIdSelect.selectedIndex = 0;
             isVerified = false;
             consecutiveRecognitions = 0;
             currentEmployeeId = null;
+            
+            // Hide error message if any
+            manualEntryError.style.display = 'none';
         }
 
         // Start verification process
@@ -486,6 +351,12 @@
             console.log("Initializing verification process");
             
             try {
+                // Load shifts data
+                await loadShifts();
+                
+                // Check if img_historyreport directory exists, create if not
+                await checkAndCreateHistoryDirectory();
+                
                 // Check camera status first
                 const statusResponse = await fetch('/api/camera/status');
                 const statusData = await statusResponse.json();
@@ -508,6 +379,9 @@
                     console.log("Starting verification interval");
                     verificationInterval = setInterval(startVerification, 1000);
                 }, 1000);
+                
+                // Show manual entry button after camera is initialized
+                manualEntryBtn.style.display = 'block';
             } catch (error) {
                 console.error("Error initializing camera:", error);
                 alert("Lỗi khởi tạo camera: " + error.message);
@@ -517,6 +391,60 @@
             acceptBtn.addEventListener('click', acceptAttendance);
             rejectBtn.addEventListener('click', rejectVerification);
             cancelBtn.addEventListener('click', cancelVerification);
+            manualEntryBtn.addEventListener('click', showManualEntryForm);
+            searchEmployeeBtn.addEventListener('click', searchEmployee);
+            
+            // Add enter key handler for manual ID input
+            manualEmployeeId.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    searchEmployee();
+                }
+            });
+        }
+        
+        // Load shifts from API
+        async function loadShifts() {
+            try {
+                const response = await fetch('/api/shifts');
+                if (!response.ok) {
+                    throw new Error(`Error loading shifts: ${response.status}`);
+                }
+                
+                shifts = await response.json();
+                
+                // Populate shift selector
+                shiftIdSelect.innerHTML = '<option value="" disabled selected>Chọn ca làm việc</option>';
+                shifts.forEach(shift => {
+                    const option = document.createElement('option');
+                    option.value = shift.id;
+                    option.textContent = `${shift.name} (${shift.start_time} - ${shift.end_time})`;
+                    shiftIdSelect.appendChild(option);
+                });
+                
+                console.log("Shifts loaded:", shifts);
+            } catch (error) {
+                console.error("Error loading shifts:", error);
+            }
+        }
+        
+        // Check if img_historyreport directory exists and create if not
+        async function checkAndCreateHistoryDirectory() {
+            try {
+                const response = await fetch('/api/check-directory', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        directory: 'img_historyreport'
+                    })
+                });
+                
+                const data = await response.json();
+                console.log("Directory check result:", data);
+            } catch (error) {
+                console.error("Error checking directory:", error);
+            }
         }
         
         // Accept attendance
@@ -528,29 +456,69 @@
                     return;
                 }
                 
+                // Validate shift selection
+                const shiftId = shiftIdSelect.value;
+                if (!shiftId) {
+                    alert('Vui lòng chọn ca làm việc');
+                    return;
+                }
+                
                 loadingSpinner.style.display = 'flex';
+                
+                // Capture the current video frame
+                const videoElement = document.getElementById('videoElement');
+                
+                // Create a canvas element to capture the frame
+                const canvas = document.createElement('canvas');
+                canvas.width = videoElement.width || 640;
+                canvas.height = videoElement.height || 480;
+                
+                // Draw the current video frame on the canvas
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
+                
+                // Get the image data as base64 string
+                const imageData = canvas.toDataURL('image/jpeg').split(',')[1]; // Remove the data:image/jpeg;base64, prefix
+                
+                console.log("Image captured, size:", imageData.length);
+                
+                // Create attendance record with the captured image
                 const response = await fetch('/api/attendance', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
                     },
                     body: JSON.stringify({
-                        employee_id: employeeId
+                        employee_id: employeeId,
+                        shift_id: parseInt(shiftId),
+                        image_data: imageData
                     })
                 });
                 
                 if (response.ok) {
+                    const attendanceData = await response.json();
+                    console.log('Attendance recorded:', attendanceData);
+                    
+                    // Check if image was saved
+                    if (attendanceData.attendance && attendanceData.attendance.image_path) {
+                        console.log('Image saved at:', attendanceData.attendance.image_path);
+                    } else {
+                        console.warn('Image might not have been saved properly');
+                    }
+                    
                     updateStatus('success', 'Đã ghi nhận điểm danh');
                     setTimeout(() => {
                         resetEmployeeInfo();
                         updateStatus('waiting', 'Chờ nhận diện khuôn mặt...');
                     }, 3000);
                 } else {
-                    updateStatus('error', 'Lỗi ghi nhận điểm danh');
+                    const errorData = await response.json();
+                    console.error('Server error:', errorData);
+                    updateStatus('error', `Lỗi ghi nhận điểm danh: ${errorData.message || 'Unknown error'}`);
                 }
             } catch (error) {
                 console.error('Error accepting attendance:', error);
-                updateStatus('error', 'Lỗi ghi nhận điểm danh');
+                updateStatus('error', `Lỗi ghi nhận điểm danh: ${error.message}`);
             } finally {
                 loadingSpinner.style.display = 'none';
             }
@@ -558,27 +526,54 @@
         
         // Reject verification
         function rejectVerification() {
-            resetEmployeeInfo();
+            // Stop camera verification
+            clearInterval(verificationInterval);
             cancelRecognition();
-            updateStatus('waiting', 'Chờ nhận diện khuôn mặt...');
+            
+            // Show manual entry form
+            isManualMode = true;
+            manualEntryForm.style.display = 'block';
+            manualEntryBtn.style.display = 'none';
+            
+            // Update status
+            updateStatus('waiting', 'Vui lòng nhập ID nhân viên');
+            
+            // Reset employee info
+            resetEmployeeInfo();
+            
+            // Focus on the input field
+            manualEmployeeId.focus();
         }
         
         // Cancel verification
         async function cancelVerification() {
             try {
                 loadingSpinner.style.display = 'flex';
-                // Call the reset recognition API
-                const response = await fetch('/api/reset-recognition', {
-                    method: 'POST'
-                });
                 
-                if (!response.ok) {
-                    console.error(`Error resetting recognition: ${response.status}`);
-                    alert('Có lỗi khi hủy nhận diện. Vui lòng thử lại.');
-                    return;
+                // Call the reset recognition API if we were in camera mode
+                if (!isManualMode) {
+                    const response = await fetch('/api/reset-recognition', {
+                        method: 'POST'
+                    });
+                    
+                    if (!response.ok) {
+                        console.error(`Error resetting recognition: ${response.status}`);
+                        alert('Có lỗi khi hủy nhận diện. Vui lòng thử lại.');
+                        return;
+                    }
+                    
+                    console.log("Recognition reset successfully");
                 }
                 
-                console.log("Recognition reset successfully");
+                // If we're in manual mode, go back to camera mode
+                if (isManualMode) {
+                    isManualMode = false;
+                    manualEntryForm.style.display = 'none';
+                    
+                    // Restart the verification interval
+                    verificationInterval = setInterval(startVerification, 1000);
+                }
+                
                 resetEmployeeInfo();
                 updateStatus('waiting', 'Chờ nhận diện khuôn mặt...');
             } catch (error) {
@@ -608,6 +603,77 @@
             }
         }
         
+        // Show manual entry form
+        function showManualEntryForm() {
+            // Stop camera verification
+            clearInterval(verificationInterval);
+            cancelRecognition();
+            
+            // Show manual entry form
+            isManualMode = true;
+            manualEntryForm.style.display = 'block';
+            manualEntryBtn.style.display = 'none';
+            
+            // Update status
+            updateStatus('waiting', 'Vui lòng nhập ID nhân viên');
+            
+            // Reset employee info
+            resetEmployeeInfo();
+            
+            // Focus on the input field
+            manualEmployeeId.focus();
+        }
+        
+        // Search for employee by ID
+        async function searchEmployee() {
+            const employeeId = manualEmployeeId.value.trim();
+            
+            // Validate input
+            if (!employeeId) {
+                manualEntryError.textContent = 'Vui lòng nhập ID nhân viên';
+                manualEntryError.style.display = 'block';
+                return;
+            }
+            
+            try {
+                loadingSpinner.style.display = 'flex';
+                manualEntryError.style.display = 'none';
+                
+                // Fetch employee data
+                const response = await fetch(`/api/employees/${employeeId}`);
+                
+                if (!response.ok) {
+                    if (response.status === 404) {
+                        manualEntryError.textContent = 'Không tìm thấy nhân viên với ID này';
+                        manualEntryError.style.display = 'block';
+                    } else {
+                        manualEntryError.textContent = `Lỗi: ${response.status} ${response.statusText}`;
+                        manualEntryError.style.display = 'block';
+                    }
+                    return;
+                }
+                
+                const employee = await response.json();
+                
+                // Update employee info
+                updateEmployeeInfo(employee);
+                updateStatus('verified', 'Đã tìm thấy nhân viên');
+                
+                // Enable buttons
+                acceptBtn.disabled = false;
+                rejectBtn.disabled = false;
+                cancelBtn.style.display = 'block';
+                isVerified = true;
+                
+            } catch (error) {
+                console.error('Error searching for employee:', error);
+                manualEntryError.textContent = `Lỗi: ${error.message}`;
+                manualEntryError.style.display = 'block';
+            } finally {
+                loadingSpinner.style.display = 'none';
+            }
+        }
+        
         // Close camera when navigating away
         window.addEventListener('beforeunload', async function(e) {
             // Cancel any ongoing verification
@@ -626,24 +692,19 @@
         });
         
         // Handle navigation to other pages
-        document.querySelectorAll('.nav-link').forEach(link => {
-            link.addEventListener('click', async function(e) {
-                // Only process if this is not the current page
-                if (!this.classList.contains('active')) {
-                    // Cancel any verification and close the camera before navigating
-                    clearInterval(verificationInterval);
-                    
-                    try {
-                        console.log("Closing camera before navigation");
-                        loadingSpinner.style.display = 'flex';
-                        await fetch('/api/camera/close', { method: 'POST' });
-                    } catch (error) {
-                        console.error('Error closing camera:', error);
-                    } finally {
-                        loadingSpinner.style.display = 'none';
-                    }
+        document.addEventListener('click', function(e) {
+            if (e.target.closest('.nav-link') && !e.target.closest('.nav-link').classList.contains('active')) {
+                // Cancel any verification and close the camera before navigating
+                clearInterval(verificationInterval);
+                
+                try {
+                    console.log("Closing camera before navigation");
+                    loadingSpinner.style.display = 'flex';
+                    fetch('/api/camera/close', { method: 'POST' });
+                } catch (error) {
+                    console.error('Error closing camera:', error);
                 }
-            });
+            }
         });
         
         // Initialize when page loads

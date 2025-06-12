@@ -1,0 +1,622 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Báo cáo Điểm danh</title>
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- DataTables CSS -->
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.4/css/dataTables.bootstrap5.min.css">
+    <!-- DatePicker CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.css">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #f8f9fa;
+        }
+        .main-container {
+            display: flex;
+            min-height: 100vh;
+        }
+        .content-area {
+            margin-left: 250px;
+            flex-grow: 1;
+            padding: 20px;
+        }
+        .card {
+            border: none;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+        .stats-card {
+            transition: all 0.3s;
+        }
+        .stats-card:hover {
+            transform: translateY(-5px);
+        }
+        .stats-icon {
+            font-size: 2rem;
+            margin-bottom: 10px;
+        }
+        .filter-section {
+            padding: 15px;
+            border-radius: 5px;
+            background-color: #f8f9fa;
+            margin-bottom: 20px;
+        }
+        .card-header {
+            background-color: #f8f9fa;
+            border-bottom: 1px solid #e9ecef;
+            padding: 15px 20px;
+        }
+        .table th {
+            font-weight: 600;
+            background-color: #f8f9fa;
+        }
+        .loading-spinner {
+            display: none;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 1001;
+            justify-content: center;
+            align-items: center;
+        }
+        .loading-spinner div {
+            width: 3rem;
+            height: 3rem;
+        }
+        @media (max-width: 768px) {
+            .sidebar {
+                transform: translateX(-100%);
+                transition: transform 0.3s ease;
+            }
+            .sidebar.show {
+                transform: translateX(0);
+            }
+            .content-area {
+                margin-left: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="main-container">
+        <!-- Include Sidebar -->
+        <div id="sidebar-container"></div>
+
+        <!-- Content Area -->
+        <div class="content-area">
+            <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                <h1 class="h2">Báo cáo Điểm danh</h1>
+                <div class="btn-toolbar mb-2 mb-md-0">
+                    <button type="button" class="btn btn-outline-secondary" id="export-btn">
+                        <i class="fas fa-download"></i> Xuất báo cáo
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Filters -->
+            <div class="card filter-section">
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3 mb-3">
+                            <label for="date-range" class="form-label">Khoảng thời gian</label>
+                            <input type="text" class="form-control" id="date-range">
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label for="department-filter" class="form-label">Phòng ban</label>
+                            <select class="form-select" id="department-filter">
+                                <option value="">Tất cả phòng ban</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label for="status-filter" class="form-label">Trạng thái</label>
+                            <select class="form-select" id="status-filter">
+                                <option value="">Tất cả trạng thái</option>
+                                <option value="on_time">Đúng giờ</option>
+                                <option value="late">Trễ giờ</option>
+                                <option value="very_late">Rất trễ</option>
+                                <option value="absent">Vắng mặt</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3 mb-3 d-flex align-items-end">
+                            <button type="button" class="btn btn-primary w-100" id="apply-filter-btn">
+                                <i class="fas fa-filter"></i> Áp dụng
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Statistics Cards -->
+            <div class="row">
+                <div class="col-md-3 mb-4">
+                    <div class="card stats-card bg-primary text-white">
+                        <div class="card-body text-center">
+                            <div class="stats-icon">
+                                <i class="fas fa-users"></i>
+                            </div>
+                            <h5 class="card-title">Tổng nhân viên</h5>
+                            <h2 class="mb-0" id="total-employees">0</h2>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3 mb-4">
+                    <div class="card stats-card bg-success text-white">
+                        <div class="card-body text-center">
+                            <div class="stats-icon">
+                                <i class="fas fa-check-circle"></i>
+                            </div>
+                            <h5 class="card-title">Đúng giờ</h5>
+                            <h2 class="mb-0"><span id="on-time-count">0</span> (<span id="on-time-percentage">0%</span>)</h2>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3 mb-4">
+                    <div class="card stats-card bg-warning text-white">
+                        <div class="card-body text-center">
+                            <div class="stats-icon">
+                                <i class="fas fa-clock"></i>
+                            </div>
+                            <h5 class="card-title">Trễ giờ</h5>
+                            <h2 class="mb-0"><span id="late-count">0</span> (<span id="late-percentage">0%</span>)</h2>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3 mb-4">
+                    <div class="card stats-card bg-danger text-white">
+                        <div class="card-body text-center">
+                            <div class="stats-icon">
+                                <i class="fas fa-times-circle"></i>
+                            </div>
+                            <h5 class="card-title">Vắng mặt/Rất trễ</h5>
+                            <h2 class="mb-0"><span id="absent-count">0</span> (<span id="absent-percentage">0%</span>)</h2>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Attendance Table -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Chi tiết Điểm danh</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-striped table-hover" id="attendance-table">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Nhân viên</th>
+                                    <th>Phòng ban</th>
+                                    <th>Ca làm</th>
+                                    <th>Thời gian điểm danh</th>
+                                    <th>Trạng thái</th>
+                                </tr>
+                            </thead>
+                            <tbody id="attendance-table-body">
+                                <!-- Attendance records will be loaded here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Employee Statistics -->
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Thống kê theo Nhân viên</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-striped table-hover" id="employee-stats-table">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Nhân viên</th>
+                                    <th>Phòng ban</th>
+                                    <th>Đúng giờ</th>
+                                    <th>Trễ giờ</th>
+                                    <th>Rất trễ</th>
+                                    <th>Vắng mặt</th>
+                                    <th>Tổng</th>
+                                </tr>
+                            </thead>
+                            <tbody id="employee-stats-table-body">
+                                <!-- Employee statistics will be loaded here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS Bundle with Popper -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <!-- DataTables JS -->
+    <script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.4/js/dataTables.bootstrap5.min.js"></script>
+    <!-- Moment.js -->
+    <script src="https://cdn.jsdelivr.net/momentjs/latest/moment.min.js"></script>
+    <!-- DateRangePicker -->
+    <script src="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.min.js"></script>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <!-- Custom JS -->
+    <script>
+
+        // Load sidebar
+        document.addEventListener('DOMContentLoaded', function() {
+            fetch('/static/pages/sidebar.html')
+                .then(response => response.text())
+                .then(html => {
+                    document.getElementById('sidebar-container').innerHTML = html;
+                    
+                    // Highlight current page in sidebar after it's loaded
+                    const currentPath = window.location.pathname;
+                    const navLinks = document.querySelectorAll('.nav-link');
+                    
+                    navLinks.forEach(link => {
+                        if (link.getAttribute('href') === currentPath) {
+                            link.classList.add('active');
+                        } else {
+                            link.classList.remove('active');
+                        }
+                    });
+                    
+                    // Add event listener to logout button
+                    document.getElementById('logoutBtn').addEventListener('click', async function() {
+                        try {
+                            loadingSpinner.style.display = 'flex';
+                            const response = await fetch('/api/logout', {
+                                method: 'POST'
+                            });
+                            if (response.ok) {
+                                window.location.href = '/login';
+                            }
+                        } catch (error) {
+                            console.error('Error during logout:', error);
+                        } finally {
+                            loadingSpinner.style.display = 'none';
+                        }
+                    });
+                })
+                .catch(error => {
+                    console.error('Error loading sidebar:', error);
+                });
+        });
+        
+        let attendanceTable;
+        let employeeStatsTable;
+        
+        $(document).ready(function() {
+            // Initialize date range picker
+            $('#date-range').daterangepicker({
+                startDate: moment().subtract(30, 'days'),
+                endDate: moment(),
+                ranges: {
+                    'Hôm nay': [moment(), moment()],
+                    'Hôm qua': [moment().subtract(1, 'days'), moment().subtract(1, 'days')],
+                    '7 ngày trước': [moment().subtract(6, 'days'), moment()],
+                    '30 ngày trước': [moment().subtract(29, 'days'), moment()],
+                    'Tháng này': [moment().startOf('month'), moment().endOf('month')],
+                    'Tháng trước': [moment().subtract(1, 'month').startOf('month'), moment().subtract(1, 'month').endOf('month')]
+                },
+                locale: {
+                    format: 'DD/MM/YYYY',
+                    applyLabel: 'Áp dụng',
+                    cancelLabel: 'Hủy',
+                    customRangeLabel: 'Tùy chọn'
+                }
+            });
+            
+            // Initialize DataTables
+            attendanceTable = $('#attendance-table').DataTable({
+                ordering: true,
+                searching: true,
+                paging: true,
+                lengthMenu: [10, 25, 50, 100],
+                language: {
+                    search: "Tìm kiếm:",
+                    lengthMenu: "Hiển thị _MENU_ dòng",
+                    info: "Hiển thị _START_ đến _END_ của _TOTAL_ dòng",
+                    infoEmpty: "Hiển thị 0 đến 0 của 0 dòng",
+                    infoFiltered: "(lọc từ _MAX_ dòng)",
+                    paginate: {
+                        first: "Đầu",
+                        last: "Cuối",
+                        next: "Tiếp",
+                        previous: "Trước"
+                    }
+                }
+            });
+            
+            employeeStatsTable = $('#employee-stats-table').DataTable({
+                ordering: true,
+                searching: true,
+                paging: true,
+                lengthMenu: [10, 25, 50, 100],
+                language: {
+                    search: "Tìm kiếm:",
+                    lengthMenu: "Hiển thị _MENU_ dòng",
+                    info: "Hiển thị _START_ đến _END_ của _TOTAL_ dòng",
+                    infoEmpty: "Hiển thị 0 đến 0 của 0 dòng",
+                    infoFiltered: "(lọc từ _MAX_ dòng)",
+                    paginate: {
+                        first: "Đầu",
+                        last: "Cuối",
+                        next: "Tiếp",
+                        previous: "Trước"
+                    }
+                }
+            });
+            
+            // Load departments for filter
+            loadDepartments();
+            
+            // Load initial data
+            loadAttendanceData();
+            
+            // Apply filter button click
+            $("#apply-filter-btn").click(function() {
+                loadAttendanceData();
+            });
+            
+            // Export button click
+            $("#export-btn").click(function() {
+                exportReport();
+            });
+        });
+        
+        // Load departments for filter
+        function loadDepartments() {
+            $.ajax({
+                url: "/api/employees",
+                type: "GET",
+                success: function(data) {
+                    const departments = new Set();
+                    data.forEach(function(employee) {
+                        if (employee.department) {
+                            departments.add(employee.department);
+                        }
+                    });
+                    
+                    const departmentFilter = $("#department-filter");
+                    departmentFilter.empty();
+                    departmentFilter.append('<option value="">Tất cả phòng ban</option>');
+                    
+                    departments.forEach(function(department) {
+                        departmentFilter.append(`<option value="${department}">${department}</option>`);
+                    });
+                },
+                error: function(xhr) {
+                    handleApiError(xhr, "Không thể tải danh sách phòng ban");
+                }
+            });
+        }
+        
+        // Load attendance data with filters
+        function loadAttendanceData() {
+            // Get filter values
+            const dateRange = $('#date-range').val();
+            const startDate = moment(dateRange.split(' - ')[0], 'DD/MM/YYYY').format('YYYY-MM-DD');
+            const endDate = moment(dateRange.split(' - ')[1], 'DD/MM/YYYY').format('YYYY-MM-DD');
+            const department = $("#department-filter").val();
+            const status = $("#status-filter").val();
+            
+            // Show loading
+            Swal.fire({
+                title: 'Đang tải dữ liệu...',
+                allowOutsideClick: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+            
+            // Prepare filter parameters
+            const params = new URLSearchParams();
+            params.append('start_date', startDate);
+            params.append('end_date', endDate);
+            if (department) {
+                params.append('department', department);
+            }
+            
+            // Get attendance statistics
+            $.ajax({
+                url: `/api/attendance/statistics?${params.toString()}`,
+                type: "GET",
+                success: function(data) {
+                    // Update statistics cards
+                    $("#total-employees").text(data.total_employees);
+                    $("#on-time-count").text(data.on_time_count);
+                    $("#late-count").text(data.late_count);
+                    $("#absent-count").text(data.absent_count + data.very_late_count);
+                    $("#on-time-percentage").text(data.on_time_percentage + "%");
+                    $("#late-percentage").text(data.late_percentage + "%");
+                    $("#absent-percentage").text((data.absent_percentage + data.very_late_percentage) + "%");
+                    
+                    // Update employee stats table
+                    updateEmployeeStatsTable(data.employee_stats);
+                    
+                    // Create filter params for attendance records
+                    const filterParams = {
+                        start_date: startDate,
+                        end_date: endDate
+                    };
+                    
+                    if (department) {
+                        filterParams.department = department;
+                    }
+                    
+                    if (status) {
+                        filterParams.status = status;
+                    }
+                    
+                    // Get attendance records
+                    $.ajax({
+                        url: "/api/attendance/filter",
+                        type: "POST",
+                        contentType: "application/json",
+                        data: JSON.stringify(filterParams),
+                        success: function(records) {
+                            updateAttendanceTable(records);
+                            Swal.close();
+                        },
+                        error: function(xhr) {
+                            Swal.close();
+                            handleApiError(xhr, "Không thể tải dữ liệu điểm danh");
+                        }
+                    });
+                },
+                error: function(xhr) {
+                    Swal.close();
+                    handleApiError(xhr, "Không thể tải thống kê điểm danh");
+                }
+            });
+        }
+        
+        // Update attendance table
+        function updateAttendanceTable(records) {
+            attendanceTable.clear();
+            
+            records.forEach(function(record) {
+                // Format date and time
+                const checkInTime = moment(record.check_in_time).format('DD/MM/YYYY HH:mm:ss');
+                
+                // Format status
+                let statusText = '';
+                let statusClass = '';
+                
+                switch(record.status) {
+                    case 'on_time':
+                        statusText = 'Đúng giờ';
+                        statusClass = 'text-success';
+                        break;
+                    case 'late':
+                        statusText = 'Trễ giờ';
+                        statusClass = 'text-warning';
+                        break;
+                    case 'very_late':
+                        statusText = 'Rất trễ';
+                        statusClass = 'text-danger';
+                        break;
+                    case 'absent':
+                        statusText = 'Vắng mặt';
+                        statusClass = 'text-danger';
+                        break;
+                    default:
+                        statusText = record.status;
+                        statusClass = '';
+                }
+                
+                attendanceTable.row.add([
+                    record.id,
+                    record.employee_name || `ID: ${record.employee_id}`,
+                    record.department || 'N/A',
+                    record.shift_name || `Ca ${record.shift_id}`,
+                    checkInTime,
+                    `<span class="${statusClass}">${statusText}</span>`
+                ]);
+            });
+            
+            attendanceTable.draw();
+        }
+        
+        // Update employee stats table
+        function updateEmployeeStatsTable(stats) {
+            employeeStatsTable.clear();
+            
+            stats.forEach(function(stat) {
+                employeeStatsTable.row.add([
+                    stat.id,
+                    stat.name,
+                    stat.department || 'N/A',
+                    stat.on_time,
+                    stat.late,
+                    stat.very_late,
+                    stat.absent,
+                    stat.total
+                ]);
+            });
+            
+            employeeStatsTable.draw();
+        }
+        
+        // Export report to CSV
+        function exportReport() {
+            // Get filter values
+            const dateRange = $('#date-range').val();
+            const department = $("#department-filter").val();
+            const status = $("#status-filter").val();
+            
+            // Create filename
+            const filename = `attendance_report_${dateRange.replace(/\//g, '-').replace(/ - /g, '_to_')}${department ? `_${department}` : ''}${status ? `_${status}` : ''}.csv`;
+            
+            // Export table data
+            const table = document.getElementById('attendance-table');
+            let csv = [];
+            let rows = table.querySelectorAll('tr');
+            
+            for (let i = 0; i < rows.length; i++) {
+                let row = [], cols = rows[i].querySelectorAll('td, th');
+                
+                for (let j = 0; j < cols.length; j++) {
+                    // Clean the text content (remove HTML tags)
+                    let text = cols[j].textContent.trim();
+                    // Escape double quotes
+                    text = text.replace(/"/g, '""');
+                    // Add quotes to the field
+                    row.push('"' + text + '"');
+                }
+                csv.push(row.join(','));
+            }
+            
+            // Download CSV file
+            let csvContent = csv.join('\n');
+            let blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            let link = document.createElement('a');
+            let url = URL.createObjectURL(blob);
+            link.setAttribute('href', url);
+            link.setAttribute('download', filename);
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            Swal.fire("Thành công", `Đã xuất báo cáo: ${filename}`, "success");
+        }
+        
+        // Handle API errors
+        function handleApiError(xhr, defaultMessage) {
+            let errorMessage = defaultMessage;
+            
+            if (xhr.responseJSON) {
+                errorMessage = xhr.responseJSON.message || defaultMessage;
+            }
+            
+            Swal.fire("Lỗi", errorMessage, "error");
+            
+            // If unauthorized, redirect to login
+            if (xhr.status === 401) {
+                setTimeout(function() {
+                    window.location.href = "/login";
+                }, 1000);
+            }
+        }
+    </script>
+</body>
+</html> 

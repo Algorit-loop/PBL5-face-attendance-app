@@ -50,18 +50,5 @@
     "department": "Marketing",
     "username": "aaa",
     "password": "123"
-  },
-  {
-    "id": 6,
-    "full_name": "qưeq",
-    "birth_date": "3131-03-12",
-    "email": "21313123@3213",
-    "phone": "23123",
-    "address": "32131",
-    "gender": "male",
-    "position": "Team Lead",
-    "department": "IT",
-    "username": "123123",
-    "password": "123"
   }
 ]
