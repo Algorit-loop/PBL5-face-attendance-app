@@ -12,10 +12,10 @@ import joblib
 import serial  # For Arduino communication
 
 class ServoController:
-    def __init__(self, port='/dev/ttyUSB0', baudrate=9600):  # Adjust port as needed
+    def __init__(self, port='COM6', baudrate=9600):  # Adjust port as needed
         self.port = port
         self.baudrate = baudrate
-        self.is_open = False
+        self.serial = None
         self.setup_serial()
         
     def setup_serial(self):
@@ -31,10 +31,9 @@ class ServoController:
     def open_door(self):
         """Open the door by sending 'o' command to Arduino"""
         try:
-            if not self.is_open and self.serial:
+            if self.serial:
                 self.serial.write(b'o')  # Send 'o' command to open door
                 time.sleep(1.5)  # Wait for servo to complete movement
-                self.is_open = True
                 print("Door opened")
         except Exception as e:
             print(f"Error opening door: {str(e)}")
@@ -42,10 +41,9 @@ class ServoController:
     def close_door(self):
         """Close the door by sending 'c' command to Arduino"""
         try:
-            if self.is_open and self.serial:
+            if self.serial:
                 self.serial.write(b'c')  # Send 'c' command to close door
                 time.sleep(1.5)  # Wait for servo to complete movement
-                self.is_open = False
                 print("Door closed")
         except Exception as e:
             print(f"Error closing door: {str(e)}")
@@ -369,20 +367,25 @@ def yolo_r50_inference(original_frame: np.ndarray, yolo_frame: np.ndarray) -> No
         # Check if any faces were detected
         if len(res.boxes) == 0:
             print("No faces detected in frame")
-            # If no faces detected for more than 5 frames, reset recognition counter
-            # But don't reset immediately to handle occasional missed frames
+            # Send '0' to Arduino to indicate no face detected
+            if servo_controller.serial:
+                servo_controller.serial.write(b'0')
+            
+            # Reset recognition counter
             if recognition_count > 0:
-                recognition_count -= 0.5  # Decrease counter gradually
-                if recognition_count < 0:
-                    recognition_count = 0
-                print(f"No face detected, reducing count to: {recognition_count}")
+                recognition_count = 0
+                print("No face detected, resetting recognition count")
             
             # Lưu kết quả trống vào global_result
             global_result = []
             processing = False
             return
-        
-        # Duyệt qua từng bounding box
+
+        # If faces are detected, send '1' to Arduino
+        if servo_controller.serial:
+            servo_controller.serial.write(b'1')
+
+        # Process each detected face
         for box in res.boxes:
             # Lấy tọa độ (trên khung hình yolo_frame)
             x1, y1, x2, y2 = map(int, box.xyxy[0])
@@ -461,20 +464,12 @@ def yolo_r50_inference(original_frame: np.ndarray, yolo_frame: np.ndarray) -> No
         # Lưu kết quả tùy chỉnh vào global_result
         global_result = custom_results
         
-        # Update recognition history
+        # Update recognition history for display purposes only
         if current_recognized_id:
             # If the same employee is recognized as before
             if recognized_employee and recognized_employee["id"] == current_recognized_id:
                 recognition_count += 1
                 print(f"Consecutive recognition: {recognition_count} for ID {current_recognized_id}")
-                
-                # If we have 3 consecutive recognitions, set the recognized employee and open door
-                if recognition_count >= 3:
-                    print(f"Employee {current_recognized_id} verified after 3 consecutive recognitions")
-                    # Open the door when employee is verified
-                    servo_controller.open_door()
-                    # Close the door after 5 seconds
-                    threading.Timer(5.0, servo_controller.close_door).start()
             else:
                 # Reset for new employee
                 recognized_employee = current_employee_data
