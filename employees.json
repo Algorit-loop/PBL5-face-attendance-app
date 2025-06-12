@@ -48,5 +48,15 @@
     "address": "ktx sv",
     "gender": "Nam",
     "position": "giam doc"
+  },
+  {
+    "id": 6,
+    "full_name": "Hiếu Cà Phê",
+    "birth_date": "2025-06-03",
+    "email": "timapyigioh@gmail.com",
+    "phone": "03755350009",
+    "address": "48 NSL",
+    "gender": "Nam",
+    "position": "Ganh team 2"
   }
 ]

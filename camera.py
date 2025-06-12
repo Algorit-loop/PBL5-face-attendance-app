@@ -11,6 +11,7 @@ from employeecontroller import EmployeeController  # Changed import
 import joblib
 from attendance_controller import AttendanceController
 from datetime import datetime
+import aiohttp
 
 import arduino_controller
 door_opened = False
@@ -153,7 +154,10 @@ def init_camera() -> bool:
     global camera, camera_running
     try:
         if camera is None:
-            camera = cv2.VideoCapture("http://172.20.10.3:81/stream")
+            camera = cv2.VideoCapture("http://172.20.10.2:81/stream")
+            # Cài đặt độ sáng và độ tương phản
+            camera.set(cv2.CAP_PROP_BRIGHTNESS, 100) # Đặt độ sáng (giá trị từ 0-255, 100 là một giá trị thử nghiệm)
+            camera.set(cv2.CAP_PROP_CONTRAST, 60)   # Đặt độ tương phản (giá trị từ 0-127, 60 là một giá trị thử nghiệm)
             if not camera.isOpened():
                 raise Exception("Không thể mở camera")
             camera_running = True
@@ -407,14 +411,12 @@ def yolo_r50_inference(original_frame: np.ndarray, yolo_frame: np.ndarray) -> No
                                                 last_check_time[id_user] = current_time
                                                 print(f"Recorded {check_type} for {name} at {result['time']}")
                                                 # Force reload attendance table
-                                                try:
-                                                    response = await fetch('/api/attendance?date=' + datetime.now().strftime('%Y-%m-%d'))
-                                                    if response.ok:
-                                                        print("Attendance table updated successfully")
-                                                except Exception as e:
-                                                    print(f"Error updating attendance table: {str(e)}")
+                                                async with aiohttp.ClientSession() as session:
+                                                    async with session.get('/api/attendance?date=' + datetime.now().strftime('%Y-%m-%d')) as response:
+                                                        if response.status == 200:
+                                                            print("Attendance table updated successfully")
                                         except Exception as e:
-                                            print(f"Error recording attendance: {str(e)}")
+                                            print(f"Error in attendance recording: {str(e)}")
                                     
                                     # Run attendance recording in a separate thread
                                     thread = threading.Thread(target=lambda: asyncio.run(record_attendance_async()))

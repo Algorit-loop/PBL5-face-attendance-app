@@ -106,8 +106,8 @@ class EmployeeManager {
 
     async handleSaveEmployee() {
         const employeeData = {
-            fullName: document.getElementById('fullName').value,
-            birthDate: document.getElementById('birthDate').value,
+            full_name: document.getElementById('fullName').value,
+            birth_date: document.getElementById('birthDate').value,
             email: document.getElementById('email').value,
             phone: document.getElementById('phone').value,
             address: document.getElementById('address').value,
@@ -146,12 +146,15 @@ class EmployeeManager {
 
     editEmployee(employeeId) {
         const employee = this.employees.find(emp => emp.id === employeeId);
-        if (!employee) return;
+        if (!employee) {
+            console.error("Employee not found for ID:", employeeId);
+            return;
+        }
 
         // Fill form with employee data
         document.getElementById('employeeId').value = employee.id;
-        document.getElementById('fullName').value = employee.fullName;
-        document.getElementById('birthDate').value = employee.birthDate.split('T')[0];
+        document.getElementById('fullName').value = employee.full_name;
+        document.getElementById('birthDate').value = employee.birth_date;
         document.getElementById('email').value = employee.email;
         document.getElementById('phone').value = employee.phone;
         document.getElementById('address').value = employee.address;
@@ -161,9 +164,9 @@ class EmployeeManager {
         // Update modal title
         document.getElementById('modalTitleText').textContent = 'Cập nhật thông tin nhân viên';
 
-        // Show modal
-        const modal = new bootstrap.Modal(document.getElementById('employeeModal'));
-        modal.show();
+        // Show modal using Bootstrap 5
+        const employeeModal = new bootstrap.Modal(document.getElementById('employeeModal'));
+        employeeModal.show();
     }
 
     async deleteEmployee(employeeId) {
