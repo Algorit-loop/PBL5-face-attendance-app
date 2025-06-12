@@ -114,6 +114,69 @@ async def logout(request: Request):
     request.session.clear()
     return {"success": True}
 
+# Change password endpoint
+@app.post("/api/change-password")
+async def change_password(request: Request):
+    try:
+        session = login_required(request)
+        user_id = session.get("user_id")
+        
+        if not user_id:
+            return JSONResponse(
+                status_code=400,
+                content={"success": False, "message": "User ID not found in session"}
+            )
+        
+        # Get request body
+        data = await request.json()
+        current_password = data.get("current_password")
+        new_password = data.get("new_password")
+        
+        if not current_password or not new_password:
+            return JSONResponse(
+                status_code=400,
+                content={"success": False, "message": "Current and new passwords are required"}
+            )
+        
+        # Get user from database
+        users = load_users()
+        user_index = next((i for i, u in enumerate(users) if u["id"] == user_id), None)
+        
+        if user_index is None:
+            return JSONResponse(
+                status_code=404,
+                content={"success": False, "message": "User not found"}
+            )
+            
+        # Verify current password
+        if users[user_index]["password"] != current_password:
+            return JSONResponse(
+                status_code=400,
+                content={"success": False, "message": "Current password is incorrect"}
+            )
+            
+        # Update password
+        users[user_index]["password"] = new_password
+        
+        # Save to database
+        with open("employees.json", "w", encoding="utf-8") as f:
+            json.dump(users, f, indent=2)
+            
+        return JSONResponse(content={
+            "success": True,
+            "message": "Password changed successfully"
+        })
+    except HTTPException as e:
+        return JSONResponse(
+            status_code=e.status_code,
+            content={"success": False, "message": e.detail}
+        )
+    except Exception as e:
+        return JSONResponse(
+            status_code=500,
+            content={"success": False, "message": str(e)}
+        )
+
 # Dashboard page
 @app.get("/dashboard")
 async def dashboard_page(request: Request):
@@ -148,6 +211,46 @@ async def get_user(request: Request):
             return HTTPException(status_code=404, detail="User not found")
     except HTTPException as e:
         return e
+
+# Update current user info
+@app.put("/api/user/update")
+async def update_user(request: Request, employee: Employee):
+    try:
+        session = login_required(request)
+        employee_id = session.get("user_id")
+        
+        if not employee_id:
+            return JSONResponse(
+                status_code=400,
+                content={"success": False, "message": "User ID not found in session"}
+            )
+        
+        # Ensure user can only update their own profile
+        if employee.id != employee_id:
+            return JSONResponse(
+                status_code=403,
+                content={"success": False, "message": "Not authorized to update this profile"}
+            )
+            
+        # Update employee using controller
+        employee_controller = EmployeeController()
+        updated_employee = await employee_controller.update(employee_id, employee)
+        
+        return JSONResponse(content={
+            "success": True,
+            "message": "Profile updated successfully",
+            "employee": updated_employee
+        })
+    except HTTPException as e:
+        return JSONResponse(
+            status_code=e.status_code,
+            content={"success": False, "message": e.detail}
+        )
+    except Exception as e:
+        return JSONResponse(
+            status_code=500,
+            content={"success": False, "message": str(e)}
+        )
 
 # Get all employees (admin only)
 @app.get("/api/employees")
@@ -812,8 +915,50 @@ async def filter_attendance(request: Request, filter_params: AttendanceFilter):
     try:
         session = login_required(request)
         attendance_controller = AttendanceController()
-        attendance_records = await attendance_controller.filter(filter_params)
-        return attendance_records
+        return await attendance_controller.filter(filter_params)
+    except HTTPException as e:
+        return e
+
+# Update attendance record
+@app.put("/api/attendance/{attendance_id}")
+async def update_attendance(request: Request, attendance_id: int, data: dict):
+    try:
+        # Only admin can update attendance records
+        session = admin_required(request)
+        
+        attendance_controller = AttendanceController()
+        updated_attendance = await attendance_controller.update(attendance_id, data)
+        
+        return JSONResponse(content={
+            "success": True,
+            "message": "Đã cập nhật thông tin điểm danh",
+            "attendance": updated_attendance
+        })
+    except HTTPException as e:
+        return JSONResponse(
+            status_code=e.status_code,
+            content={"success": False, "message": e.detail}
+        )
+    except Exception as e:
+        return JSONResponse(
+            status_code=500,
+            content={"success": False, "message": str(e)}
+        )
+
+# Delete attendance record
+@app.delete("/api/attendance/{attendance_id}")
+async def delete_attendance(request: Request, attendance_id: int):
+    try:
+        # Only admin can delete attendance records
+        session = admin_required(request)
+        
+        attendance_controller = AttendanceController()
+        success = await attendance_controller.delete(attendance_id)
+        
+        return JSONResponse(content={
+            "success": True,
+            "message": "Đã xóa thông tin điểm danh"
+        })
     except HTTPException as e:
         return JSONResponse(
             status_code=e.status_code,
@@ -837,6 +982,46 @@ async def get_attendance_statistics(
         attendance_controller = AttendanceController()
         statistics = await attendance_controller.get_statistics(start_date, end_date, department)
         return statistics
+    except HTTPException as e:
+        return JSONResponse(
+            status_code=e.status_code,
+            content={"success": False, "message": e.detail}
+        )
+    except Exception as e:
+        return JSONResponse(
+            status_code=500,
+            content={"success": False, "message": str(e)}
+        )
+
+@app.get("/api/attendance/employee/{employee_id}")
+async def get_attendance_by_employee(request: Request, employee_id: int):
+    try:
+        session = login_required(request)
+        attendance_controller = AttendanceController()
+        attendance_records = await attendance_controller.get_by_employee_id(employee_id)
+        return attendance_records
+    except HTTPException as e:
+        return JSONResponse(
+            status_code=e.status_code,
+            content={"success": False, "message": e.detail}
+        )
+    except Exception as e:
+        return JSONResponse(
+            status_code=500,
+            content={"success": False, "message": str(e)}
+        )
+
+@app.get("/api/attendance/stats/user")
+async def get_user_attendance_stats(request: Request):
+    try:
+        session = login_required(request)
+        employee_id = session.get("user_id")
+        if not employee_id:
+            raise HTTPException(status_code=400, detail="User ID not found in session")
+            
+        attendance_controller = AttendanceController()
+        stats = await attendance_controller.get_user_stats(employee_id)
+        return stats
     except HTTPException as e:
         return JSONResponse(
             status_code=e.status_code,
@@ -1209,6 +1394,23 @@ async def positions_page(request: Request):
     try:
         session = admin_required(request)
         return RedirectResponse(url="/static/pages/positions.html")
+    except HTTPException:
+        return RedirectResponse(url="/login")
+
+# Page routes for user features
+@app.get("/user_attendancehistory")
+async def user_attendance_history_page(request: Request):
+    try:
+        session = login_required(request)
+        return RedirectResponse(url="/static/pages/user_attendancehistory.html")
+    except HTTPException:
+        return RedirectResponse(url="/login")
+
+@app.get("/profile")
+async def profile_page(request: Request):
+    try:
+        session = login_required(request)
+        return RedirectResponse(url="/static/pages/profile.html")
     except HTTPException:
         return RedirectResponse(url="/login")
 

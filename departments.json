@@ -18,5 +18,10 @@
     "id": 5,
     "name": "Operations",
     "description": "Operations and Logistics Department"
+  },
+  {
+    "id": 6,
+    "name": "Hero",
+    "description": "ALL"
   }
 ]

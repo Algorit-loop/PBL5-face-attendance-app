@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Profile</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #f8f9fa;
+        }
+        .main-container {
+            display: flex;
+            min-height: 100vh;
+        }
+        .content-area {
+            margin-left: 250px;
+            flex-grow: 1;
+            padding: 20px;
+        }
+        .card {
+            border: none;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+        .profile-header {
+            background-color: #2c3e50;
+            color: white;
+            padding: 30px;
+            border-radius: 10px 10px 0 0;
+            position: relative;
+        }
+        .profile-avatar {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            background-color: #34495e;
+            border: 4px solid white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3rem;
+            color: white;
+            margin-bottom: 20px;
+        }
+        .profile-info h2 {
+            margin-bottom: 5px;
+        }
+        .profile-info p {
+            margin-bottom: 0;
+            opacity: 0.8;
+        }
+        .profile-tabs {
+            background-color: white;
+            padding: 15px 20px 0;
+            border-bottom: 1px solid #e9ecef;
+        }
+        .profile-tabs .nav-link {
+            color: #6c757d;
+            font-weight: 500;
+            padding: 10px 15px;
+            border: none;
+            border-bottom: 2px solid transparent;
+            margin-right: 15px;
+        }
+        .profile-tabs .nav-link.active {
+            color: #0d6efd;
+            border-bottom-color: #0d6efd;
+        }
+        .profile-content {
+            padding: 30px;
+        }
+        .info-item {
+            margin-bottom: 20px;
+        }
+        .info-item .label {
+            font-weight: 600;
+            color: #6c757d;
+            margin-bottom: 5px;
+        }
+        .info-item .value {
+            font-size: 1.1rem;
+        }
+        .loading-spinner {
+            display: none;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 1001;
+            justify-content: center;
+            align-items: center;
+        }
+        .loading-spinner div {
+            width: 3rem;
+            height: 3rem;
+        }
+        @media (max-width: 768px) {
+            .sidebar {
+                transform: translateX(-100%);
+                transition: transform 0.3s ease;
+            }
+            .sidebar.show {
+                transform: translateX(0);
+            }
+            .content-area {
+                margin-left: 0;
+            }
+            .profile-header {
+                text-align: center;
+            }
+            .profile-avatar {
+                margin: 0 auto 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="main-container">
+        <!-- Include User Sidebar -->
+        <div id="sidebar-container"></div>
+
+        <!-- Content Area -->
+        <div class="content-area">
+            <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                <h1 class="h2">My Profile</h1>
+            </div>
+            
+            <!-- Profile Card -->
+            <div class="card">
+                <div class="profile-header">
+                    <div class="row align-items-center">
+                        <div class="col-md-2 text-center text-md-start">
+                            <div class="profile-avatar" id="user-avatar">
+                                <i class="fas fa-user"></i>
+                            </div>
+                        </div>
+                        <div class="col-md-10">
+                            <div class="profile-info">
+                                <h2 id="user-fullname">Loading...</h2>
+                                <p id="user-position">Loading...</p>
+                                <div class="mt-3">
+                                    <button class="btn btn-light" id="edit-profile-btn">
+                                        <i class="fas fa-edit me-2"></i>Edit Profile
+                                    </button>
+                                    <button class="btn btn-outline-light ms-2" id="change-password-btn">
+                                        <i class="fas fa-key me-2"></i>Change Password
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="profile-tabs">
+                    <ul class="nav nav-tabs border-0" id="profileTabs" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active" id="personal-tab" data-bs-toggle="tab" data-bs-target="#personal" type="button" role="tab" aria-controls="personal" aria-selected="true">Personal Information</button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="contact-tab" data-bs-toggle="tab" data-bs-target="#contact" type="button" role="tab" aria-controls="contact" aria-selected="false">Contact Details</button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="work-tab" data-bs-toggle="tab" data-bs-target="#work" type="button" role="tab" aria-controls="work" aria-selected="false">Work Information</button>
+                        </li>
+                    </ul>
+                </div>
+                
+                <div class="profile-content">
+                    <div class="tab-content" id="profileTabsContent">
+                        <!-- Personal Information Tab -->
+                        <div class="tab-pane fade show active" id="personal" role="tabpanel" aria-labelledby="personal-tab">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="info-item">
+                                        <div class="label">Full Name</div>
+                                        <div class="value" id="info-fullname">Loading...</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="info-item">
+                                        <div class="label">Username</div>
+                                        <div class="value" id="info-username">Loading...</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="info-item">
+                                        <div class="label">Birth Date</div>
+                                        <div class="value" id="info-birthdate">Loading...</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="info-item">
+                                        <div class="label">Gender</div>
+                                        <div class="value" id="info-gender">Loading...</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Contact Details Tab -->
+                        <div class="tab-pane fade" id="contact" role="tabpanel" aria-labelledby="contact-tab">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="info-item">
+                                        <div class="label">Email</div>
+                                        <div class="value" id="info-email">Loading...</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="info-item">
+                                        <div class="label">Phone</div>
+                                        <div class="value" id="info-phone">Loading...</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-12">
+                                    <div class="info-item">
+                                        <div class="label">Address</div>
+                                        <div class="value" id="info-address">Loading...</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Work Information Tab -->
+                        <div class="tab-pane fade" id="work" role="tabpanel" aria-labelledby="work-tab">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="info-item">
+                                        <div class="label">Employee ID</div>
+                                        <div class="value" id="info-id">Loading...</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="info-item">
+                                        <div class="label">Position</div>
+                                        <div class="value" id="info-position">Loading...</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="info-item">
+                                        <div class="label">Department</div>
+                                        <div class="value" id="info-department">Loading...</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Profile Modal -->
+    <div class="modal fade" id="editProfileModal" tabindex="-1" aria-labelledby="editProfileModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="editProfileModalLabel">Edit Profile</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="editProfileForm">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="edit-fullname" class="form-label">Full Name</label>
+                                <input type="text" class="form-control" id="edit-fullname" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="edit-username" class="form-label">Username</label>
+                                <input type="text" class="form-control" id="edit-username" disabled>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="edit-birthdate" class="form-label">Birth Date</label>
+                                <input type="date" class="form-control" id="edit-birthdate">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="edit-gender" class="form-label">Gender</label>
+                                <select class="form-select" id="edit-gender">
+                                    <option value="">Select Gender</option>
+                                    <option value="male">Male</option>
+                                    <option value="female">Female</option>
+                                    <option value="other">Other</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="edit-email" class="form-label">Email</label>
+                                <input type="email" class="form-control" id="edit-email" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="edit-phone" class="form-label">Phone</label>
+                                <input type="tel" class="form-control" id="edit-phone">
+                            </div>
+                            <div class="col-md-12 mb-3">
+                                <label for="edit-address" class="form-label">Address</label>
+                                <textarea class="form-control" id="edit-address" rows="3"></textarea>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="save-profile-btn">Save Changes</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Change Password Modal -->
+    <div class="modal fade" id="changePasswordModal" tabindex="-1" aria-labelledby="changePasswordModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="changePasswordModalLabel">Change Password</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="changePasswordForm">
+                        <div class="mb-3">
+                            <label for="current-password" class="form-label">Current Password</label>
+                            <input type="password" class="form-control" id="current-password" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="new-password" class="form-label">New Password</label>
+                            <input type="password" class="form-control" id="new-password" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="confirm-password" class="form-label">Confirm New Password</label>
+                            <input type="password" class="form-control" id="confirm-password" required>
+                            <div class="invalid-feedback" id="password-mismatch-feedback">
+                                Passwords do not match
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="save-password-btn">Change Password</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading Spinner -->
+    <div class="loading-spinner">
+        <div class="spinner-border text-light" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Global variables
+        const loadingSpinner = document.querySelector('.loading-spinner');
+        let userData;
+        
+        // Modal instances
+        let editProfileModal;
+        let changePasswordModal;
+        
+        // Authentication check
+        async function checkAuthentication() {
+            try {
+                loadingSpinner.style.display = 'flex';
+                const response = await fetch('/api/user');
+                
+                if (!response.ok) {
+                    // Not authenticated, redirect to login
+                    window.location.href = '/login';
+                    return false;
+                }
+                
+                userData = await response.json();
+                return true;
+            } catch (error) {
+                console.error('Authentication check failed:', error);
+                window.location.href = '/login';
+                return false;
+            } finally {
+                loadingSpinner.style.display = 'none';
+            }
+        }
+        
+        // Load sidebar
+        async function loadSidebar() {
+            try {
+                const response = await fetch('/static/pages/user_sidebar.html');
+                const html = await response.text();
+                document.getElementById('sidebar-container').innerHTML = html;
+                
+                // Highlight current page in sidebar
+                const currentPath = window.location.pathname;
+                const navLinks = document.querySelectorAll('.nav-link');
+                
+                navLinks.forEach(link => {
+                    if (link.getAttribute('href') === currentPath) {
+                        link.classList.add('active');
+                    } else {
+                        link.classList.remove('active');
+                    }
+                });
+            } catch (error) {
+                console.error('Error loading sidebar:', error);
+            }
+        }
+        
+        // Load user data
+        function loadUserData() {
+            if (!userData) return;
+            
+            // Format birth date
+            const birthDate = userData.birth_date ? new Date(userData.birth_date).toLocaleDateString() : 'Not set';
+            
+            // Format gender with first letter capitalized
+            const gender = userData.gender ? userData.gender.charAt(0).toUpperCase() + userData.gender.slice(1) : 'Not set';
+            
+            // Update header
+            document.getElementById('user-fullname').textContent = userData.full_name || 'User';
+            document.getElementById('user-position').textContent = userData.position || 'Employee';
+            
+            // Update personal information
+            document.getElementById('info-fullname').textContent = userData.full_name || 'Not set';
+            document.getElementById('info-username').textContent = userData.username || 'Not set';
+            document.getElementById('info-birthdate').textContent = birthDate;
+            document.getElementById('info-gender').textContent = gender;
+            
+            // Update contact details
+            document.getElementById('info-email').textContent = userData.email || 'Not set';
+            document.getElementById('info-phone').textContent = userData.phone || 'Not set';
+            document.getElementById('info-address').textContent = userData.address || 'Not set';
+            
+            // Update work information
+            document.getElementById('info-id').textContent = userData.id || 'Not set';
+            document.getElementById('info-position').textContent = userData.position || 'Not set';
+            document.getElementById('info-department').textContent = userData.department || 'Not set';
+            
+            // Update avatar with initials
+            if (userData.full_name) {
+                const initials = userData.full_name
+                    .split(' ')
+                    .map(name => name[0])
+                    .join('')
+                    .substring(0, 2)
+                    .toUpperCase();
+                
+                document.getElementById('user-avatar').innerHTML = initials;
+            }
+            
+            // Set edit form values
+            document.getElementById('edit-fullname').value = userData.full_name || '';
+            document.getElementById('edit-username').value = userData.username || '';
+            document.getElementById('edit-birthdate').value = userData.birth_date || '';
+            document.getElementById('edit-gender').value = userData.gender || '';
+            document.getElementById('edit-email').value = userData.email || '';
+            document.getElementById('edit-phone').value = userData.phone || '';
+            document.getElementById('edit-address').value = userData.address || '';
+        }
+        
+        // Save profile changes
+        async function saveProfileChanges() {
+            try {
+                loadingSpinner.style.display = 'flex';
+                
+                // Get form values
+                const updatedData = {
+                    id: userData.id,
+                    full_name: document.getElementById('edit-fullname').value,
+                    birth_date: document.getElementById('edit-birthdate').value,
+                    gender: document.getElementById('edit-gender').value,
+                    email: document.getElementById('edit-email').value,
+                    phone: document.getElementById('edit-phone').value,
+                    address: document.getElementById('edit-address').value
+                };
+                
+                // Preserve fields that shouldn't be changed
+                updatedData.username = userData.username;
+                updatedData.position = userData.position;
+                updatedData.department = userData.department;
+                
+                // Send update request - using the user endpoint instead of admin endpoint
+                const response = await fetch(`/api/user/update`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(updatedData)
+                });
+                
+                if (!response.ok) {
+                    throw new Error('Failed to update profile');
+                }
+                
+                const result = await response.json();
+                
+                if (!result.success) {
+                    throw new Error(result.message || 'Failed to update profile');
+                }
+                
+                // Update user data
+                const userResponse = await fetch('/api/user');
+                userData = await userResponse.json();
+                
+                // Update UI
+                loadUserData();
+                
+                // Close modal
+                editProfileModal.hide();
+                
+                alert('Profile updated successfully');
+            } catch (error) {
+                console.error('Error updating profile:', error);
+                alert(error.message || 'Error updating profile. Please try again.');
+            } finally {
+                loadingSpinner.style.display = 'none';
+            }
+        }
+        
+        // Change password
+        async function changePassword() {
+            try {
+                const currentPassword = document.getElementById('current-password').value;
+                const newPassword = document.getElementById('new-password').value;
+                const confirmPassword = document.getElementById('confirm-password').value;
+                
+                // Check if passwords match
+                if (newPassword !== confirmPassword) {
+                    document.getElementById('confirm-password').classList.add('is-invalid');
+                    document.getElementById('password-mismatch-feedback').style.display = 'block';
+                    return;
+                }
+                
+                document.getElementById('confirm-password').classList.remove('is-invalid');
+                document.getElementById('password-mismatch-feedback').style.display = 'none';
+                
+                loadingSpinner.style.display = 'flex';
+                
+                // Send password change request
+                const response = await fetch(`/api/change-password`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        current_password: currentPassword,
+                        new_password: newPassword
+                    })
+                });
+                
+                if (!response.ok) {
+                    throw new Error('Failed to change password');
+                }
+                
+                const result = await response.json();
+                
+                if (!result.success) {
+                    throw new Error(result.message || 'Failed to change password');
+                }
+                
+                // Close modal and reset form
+                changePasswordModal.hide();
+                document.getElementById('changePasswordForm').reset();
+                
+                alert('Password changed successfully');
+            } catch (error) {
+                console.error('Error changing password:', error);
+                alert(error.message || 'Error changing password. Please try again.');
+            } finally {
+                loadingSpinner.style.display = 'none';
+            }
+        }
+        
+        // Initialize
+        document.addEventListener('DOMContentLoaded', async function() {
+            // Initialize modals
+            editProfileModal = new bootstrap.Modal(document.getElementById('editProfileModal'));
+            changePasswordModal = new bootstrap.Modal(document.getElementById('changePasswordModal'));
+            
+            // Check authentication first
+            const isAuthenticated = await checkAuthentication();
+            
+            if (isAuthenticated) {
+                await loadSidebar();
+                loadUserData();
+                
+                // Set up event listeners
+                document.getElementById('edit-profile-btn').addEventListener('click', function() {
+                    editProfileModal.show();
+                });
+                
+                document.getElementById('change-password-btn').addEventListener('click', function() {
+                    changePasswordModal.show();
+                });
+                
+                document.getElementById('save-profile-btn').addEventListener('click', function() {
+                    if (document.getElementById('editProfileForm').checkValidity()) {
+                        saveProfileChanges();
+                    } else {
+                        document.getElementById('editProfileForm').reportValidity();
+                    }
+                });
+                
+                document.getElementById('save-password-btn').addEventListener('click', function() {
+                    if (document.getElementById('changePasswordForm').checkValidity()) {
+                        changePassword();
+                    } else {
+                        document.getElementById('changePasswordForm').reportValidity();
+                    }
+                });
+                
+                // Reset validation when typing in confirm password field
+                document.getElementById('confirm-password').addEventListener('input', function() {
+                    this.classList.remove('is-invalid');
+                    document.getElementById('password-mismatch-feedback').style.display = 'none';
+                });
+            }
+        });
+    </script>
+</body>
+</html> 

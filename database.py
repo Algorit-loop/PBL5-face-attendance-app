@@ -357,6 +357,14 @@ def update_attendance(attendance_id: int, attendance_data: Dict[str, Any]) -> Di
         if record["id"] == attendance_id:
             # Preserve the ID
             attendance_data["id"] = attendance_id
+            
+            # Ensure essential fields are preserved
+            if "employee_id" not in attendance_data and "employee_id" in record:
+                attendance_data["employee_id"] = record["employee_id"]
+                
+            if "shift_id" not in attendance_data and "shift_id" in record:
+                attendance_data["shift_id"] = record["shift_id"]
+            
             attendance_records[i] = attendance_data
             save_data(ATTENDANCE_FILE, attendance_records)
             return attendance_data

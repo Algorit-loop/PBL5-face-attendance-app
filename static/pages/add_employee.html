@@ -202,45 +202,83 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
+        // Authentication and authorization check
+        async function checkAuthentication() {
+            try {
+                const loadingSpinner = document.querySelector('.loading-spinner');
+                loadingSpinner.style.display = 'flex';
+                
+                const response = await fetch('/api/user');
+                
+                if (!response.ok) {
+                    // Not authenticated, redirect to login
+                    window.location.href = '/login';
+                    return false;
+                }
+                
+                const userData = await response.json();
+                
+                // Check if user is admin
+                if (userData.position !== 'admin') {
+                    // Redirect to user dashboard if not admin
+                    window.location.href = '/user_dashboard';
+                    return false;
+                }
+                
+                return true;
+            } catch (error) {
+                console.error('Authentication check failed:', error);
+                window.location.href = '/login';
+                return false;
+            } finally {
+                loadingSpinner.style.display = 'none';
+            }
+        }
+        
         // Load sidebar
         document.addEventListener('DOMContentLoaded', function() {
-            fetch('/static/pages/sidebar.html')
-                .then(response => response.text())
-                .then(html => {
-                    document.getElementById('sidebar-container').innerHTML = html;
-                    
-                    // Highlight current page in sidebar after it's loaded
-                    const currentPath = window.location.pathname;
-                    const navLinks = document.querySelectorAll('.nav-link');
-                    
-                    navLinks.forEach(link => {
-                        if (link.getAttribute('href') === currentPath) {
-                            link.classList.add('active');
-                        } else {
-                            link.classList.remove('active');
-                        }
-                    });
-                    
-                    // Add event listener to logout button
-                    document.getElementById('logoutBtn').addEventListener('click', async function() {
-                        try {
-                            loadingSpinner.style.display = 'flex';
-                            const response = await fetch('/api/logout', {
-                                method: 'POST'
-                            });
-                            if (response.ok) {
-                                window.location.href = '/login';
+            // Check authentication first
+            checkAuthentication().then(isAuthenticated => {
+                if (!isAuthenticated) return;
+                
+                fetch('/static/pages/sidebar.html')
+                    .then(response => response.text())
+                    .then(html => {
+                        document.getElementById('sidebar-container').innerHTML = html;
+                        
+                        // Highlight current page in sidebar after it's loaded
+                        const currentPath = window.location.pathname;
+                        const navLinks = document.querySelectorAll('.nav-link');
+                        
+                        navLinks.forEach(link => {
+                            if (link.getAttribute('href') === currentPath) {
+                                link.classList.add('active');
+                            } else {
+                                link.classList.remove('active');
                             }
-                        } catch (error) {
-                            console.error('Error during logout:', error);
-                        } finally {
-                            loadingSpinner.style.display = 'none';
-                        }
+                        });
+                        
+                        // Add event listener to logout button
+                        document.getElementById('logoutBtn').addEventListener('click', async function() {
+                            try {
+                                loadingSpinner.style.display = 'flex';
+                                const response = await fetch('/api/logout', {
+                                    method: 'POST'
+                                });
+                                if (response.ok) {
+                                    window.location.href = '/login';
+                                }
+                            } catch (error) {
+                                console.error('Error during logout:', error);
+                            } finally {
+                                loadingSpinner.style.display = 'none';
+                            }
+                        });
+                    })
+                    .catch(error => {
+                        console.error('Error loading sidebar:', error);
                     });
-                })
-                .catch(error => {
-                    console.error('Error loading sidebar:', error);
-                });
+            });
         });
 
         // Global variables

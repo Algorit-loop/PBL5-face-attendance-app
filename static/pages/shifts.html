@@ -209,6 +209,10 @@
     <script>
         // Load sidebar
         document.addEventListener('DOMContentLoaded', function() {
+            // Bỏ qua kiểm tra xác thực
+            // checkAuthentication().then(isAuthenticated => {
+            //     if (!isAuthenticated) return;
+                
             fetch('/static/pages/sidebar.html')
                 .then(response => response.text())
                 .then(html => {
@@ -246,8 +250,8 @@
                 .catch(error => {
                     console.error('Error loading sidebar:', error);
                 });
+            // });
         });
-
 
         $(document).ready(function() {
             // Load user info

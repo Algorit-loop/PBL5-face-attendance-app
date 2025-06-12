@@ -1,0 +1,673 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Attendance History</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.4/css/dataTables.bootstrap5.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.css">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #f8f9fa;
+        }
+        .main-container {
+            display: flex;
+            min-height: 100vh;
+        }
+        .content-area {
+            margin-left: 250px;
+            flex-grow: 1;
+            padding: 20px;
+        }
+        .card {
+            border: none;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+        .stats-card {
+            transition: all 0.3s;
+        }
+        .stats-card:hover {
+            transform: translateY(-5px);
+        }
+        .stats-icon {
+            font-size: 2rem;
+            margin-bottom: 10px;
+        }
+        .filter-section {
+            padding: 15px;
+            border-radius: 5px;
+            background-color: #f8f9fa;
+            margin-bottom: 20px;
+        }
+        .card-header {
+            background-color: #f8f9fa;
+            border-bottom: 1px solid #e9ecef;
+            padding: 15px 20px;
+        }
+        .table th {
+            font-weight: 600;
+            background-color: #f8f9fa;
+        }
+        .loading-spinner {
+            display: none;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 1001;
+            justify-content: center;
+            align-items: center;
+        }
+        .loading-spinner div {
+            width: 3rem;
+            height: 3rem;
+        }
+        .chart-container {
+            position: relative;
+            height: 300px;
+            margin-bottom: 20px;
+        }
+        @media (max-width: 768px) {
+            .sidebar {
+                transform: translateX(-100%);
+                transition: transform 0.3s ease;
+            }
+            .sidebar.show {
+                transform: translateX(0);
+            }
+            .content-area {
+                margin-left: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="main-container">
+        <!-- Include User Sidebar -->
+        <div id="sidebar-container"></div>
+
+        <!-- Content Area -->
+        <div class="content-area">
+            <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                <h1 class="h2">Attendance History</h1>
+                <div class="btn-toolbar mb-2 mb-md-0">
+                    <button type="button" class="btn btn-outline-secondary" id="export-btn">
+                        <i class="fas fa-download"></i> Export
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Filters -->
+            <div class="card filter-section">
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="date-range" class="form-label">Date Range</label>
+                            <input type="text" class="form-control" id="date-range">
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label for="status-filter" class="form-label">Status</label>
+                            <select class="form-select" id="status-filter">
+                                <option value="">All Statuses</option>
+                                <option value="on_time">On Time</option>
+                                <option value="late">Late</option>
+                                <option value="very_late">Very Late</option>
+                                <option value="absent">Absent</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3 mb-3 d-flex align-items-end">
+                            <button type="button" class="btn btn-primary w-100" id="apply-filter-btn">
+                                <i class="fas fa-filter"></i> Apply
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Statistics Cards -->
+            <div class="row">
+                <div class="col-md-3 mb-4">
+                    <div class="card stats-card bg-success text-white">
+                        <div class="card-body text-center">
+                            <div class="stats-icon">
+                                <i class="fas fa-check-circle"></i>
+                            </div>
+                            <h5 class="card-title">On Time</h5>
+                            <h2 class="mb-0" id="on-time-count">0</h2>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3 mb-4">
+                    <div class="card stats-card bg-warning text-white">
+                        <div class="card-body text-center">
+                            <div class="stats-icon">
+                                <i class="fas fa-clock"></i>
+                            </div>
+                            <h5 class="card-title">Late</h5>
+                            <h2 class="mb-0" id="late-count">0</h2>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3 mb-4">
+                    <div class="card stats-card bg-danger text-white">
+                        <div class="card-body text-center">
+                            <div class="stats-icon">
+                                <i class="fas fa-times-circle"></i>
+                            </div>
+                            <h5 class="card-title">Absent/Very Late</h5>
+                            <h2 class="mb-0" id="absent-count">0</h2>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3 mb-4">
+                    <div class="card stats-card bg-primary text-white">
+                        <div class="card-body text-center">
+                            <div class="stats-icon">
+                                <i class="fas fa-calendar-check"></i>
+                            </div>
+                            <h5 class="card-title">Total Days</h5>
+                            <h2 class="mb-0" id="total-days">0</h2>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Charts -->
+            <div class="row">
+                <div class="col-md-6 mb-4">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">Attendance Status Distribution</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="chart-container">
+                                <canvas id="status-chart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6 mb-4">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">Monthly Attendance Trend</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="chart-container">
+                                <canvas id="trend-chart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Attendance Table -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Attendance Records</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-striped table-hover" id="attendance-table">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Check-in Time</th>
+                                    <th>Check-out Time</th>
+                                    <th>Shift</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="attendance-table-body">
+                                <!-- Attendance records will be loaded here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading Spinner -->
+    <div class="loading-spinner">
+        <div class="spinner-border text-light" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS Bundle with Popper -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <!-- DataTables JS -->
+    <script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.4/js/dataTables.bootstrap5.min.js"></script>
+    <!-- Moment.js -->
+    <script src="https://cdn.jsdelivr.net/momentjs/latest/moment.min.js"></script>
+    <!-- DateRangePicker -->
+    <script src="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.min.js"></script>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Custom JS -->
+    <script>
+        // Global variables
+        const loadingSpinner = document.querySelector('.loading-spinner');
+        let attendanceTable;
+        let statusChart;
+        let trendChart;
+        let userData;
+        
+        // Authentication check
+        async function checkAuthentication() {
+            try {
+                loadingSpinner.style.display = 'flex';
+                const response = await fetch('/api/user');
+                
+                if (!response.ok) {
+                    // Not authenticated, redirect to login
+                    window.location.href = '/login';
+                    return false;
+                }
+                
+                userData = await response.json();
+                return true;
+            } catch (error) {
+                console.error('Authentication check failed:', error);
+                window.location.href = '/login';
+                return false;
+            } finally {
+                loadingSpinner.style.display = 'none';
+            }
+        }
+        
+        // Load sidebar
+        async function loadSidebar() {
+            try {
+                const response = await fetch('/static/pages/user_sidebar.html');
+                const html = await response.text();
+                document.getElementById('sidebar-container').innerHTML = html;
+                
+                // Highlight current page in sidebar
+                const currentPath = window.location.pathname;
+                const navLinks = document.querySelectorAll('.nav-link');
+                
+                navLinks.forEach(link => {
+                    if (link.getAttribute('href') === currentPath) {
+                        link.classList.add('active');
+                    } else {
+                        link.classList.remove('active');
+                    }
+                });
+            } catch (error) {
+                console.error('Error loading sidebar:', error);
+            }
+        }
+        
+        // Initialize components
+        function initializeComponents() {
+            // Initialize date range picker
+            $('#date-range').daterangepicker({
+                startDate: moment().subtract(30, 'days'),
+                endDate: moment(),
+                ranges: {
+                    'Today': [moment(), moment()],
+                    'Yesterday': [moment().subtract(1, 'days'), moment().subtract(1, 'days')],
+                    'Last 7 Days': [moment().subtract(6, 'days'), moment()],
+                    'Last 30 Days': [moment().subtract(29, 'days'), moment()],
+                    'This Month': [moment().startOf('month'), moment().endOf('month')],
+                    'Last Month': [moment().subtract(1, 'month').startOf('month'), moment().subtract(1, 'month').endOf('month')]
+                },
+                locale: {
+                    format: 'DD/MM/YYYY'
+                }
+            });
+            
+            // Initialize DataTable
+            attendanceTable = $('#attendance-table').DataTable({
+                ordering: true,
+                searching: true,
+                paging: true,
+                lengthMenu: [10, 25, 50, 100],
+                language: {
+                    search: "Search:",
+                    lengthMenu: "Show _MENU_ entries",
+                    info: "Showing _START_ to _END_ of _TOTAL_ entries",
+                    infoEmpty: "Showing 0 to 0 of 0 entries",
+                    infoFiltered: "(filtered from _MAX_ total entries)",
+                    paginate: {
+                        first: "First",
+                        last: "Last",
+                        next: "Next",
+                        previous: "Previous"
+                    }
+                }
+            });
+            
+            // Apply filter button click
+            $("#apply-filter-btn").click(function() {
+                loadAttendanceData();
+            });
+            
+            // Export button click
+            $("#export-btn").click(function() {
+                exportAttendanceData();
+            });
+        }
+        
+        // Load attendance data with filters
+        async function loadAttendanceData() {
+            try {
+                loadingSpinner.style.display = 'flex';
+                
+                // Get filter values
+                const dateRange = $('#date-range').val();
+                const startDate = moment(dateRange.split(' - ')[0], 'DD/MM/YYYY').format('YYYY-MM-DD');
+                const endDate = moment(dateRange.split(' - ')[1], 'DD/MM/YYYY').format('YYYY-MM-DD');
+                const status = $("#status-filter").val();
+                
+                // Create filter params
+                const filterParams = {
+                    start_date: startDate,
+                    end_date: endDate
+                };
+                
+                if (status) {
+                    filterParams.status = status;
+                }
+                
+                // Get attendance records for the current user
+                const response = await fetch(`/api/attendance/employee/${userData.id}`);
+                
+                if (!response.ok) {
+                    throw new Error(`Failed to fetch attendance records: ${response.status}`);
+                }
+                
+                const allRecords = await response.json();
+                
+                // Filter records based on date range and status
+                const filteredRecords = allRecords.filter(record => {
+                    const recordDate = moment(record.check_in_time).format('YYYY-MM-DD');
+                    const isInDateRange = recordDate >= startDate && recordDate <= endDate;
+                    const matchesStatus = !status || record.status === status;
+                    return isInDateRange && matchesStatus;
+                });
+                
+                // Update statistics
+                updateStatistics(filteredRecords);
+                
+                // Update charts
+                updateCharts(filteredRecords);
+                
+                // Update table
+                updateAttendanceTable(filteredRecords);
+                
+            } catch (error) {
+                console.error('Error loading attendance data:', error);
+                alert('Error loading attendance data. Please try again.');
+            } finally {
+                loadingSpinner.style.display = 'none';
+            }
+        }
+        
+        // Update statistics
+        function updateStatistics(records) {
+            const onTimeCount = records.filter(r => r.status === 'on_time').length;
+            const lateCount = records.filter(r => r.status === 'late').length;
+            const veryLateCount = records.filter(r => r.status === 'very_late').length;
+            const absentCount = records.filter(r => r.status === 'absent').length;
+            const totalDays = records.length;
+            
+            document.getElementById('on-time-count').textContent = onTimeCount;
+            document.getElementById('late-count').textContent = lateCount;
+            document.getElementById('absent-count').textContent = veryLateCount + absentCount;
+            document.getElementById('total-days').textContent = totalDays;
+        }
+        
+        // Update attendance table
+        function updateAttendanceTable(records) {
+            attendanceTable.clear();
+            
+            records.forEach(record => {
+                // Format date and time
+                const recordDate = moment(record.check_in_time).format('DD/MM/YYYY');
+                const checkInTime = record.check_in_time ? moment(record.check_in_time).format('HH:mm:ss') : '-';
+                const checkOutTime = record.check_out_time ? moment(record.check_out_time).format('HH:mm:ss') : '-';
+                
+                // Format status
+                let statusText = '';
+                let statusClass = '';
+                
+                switch(record.status) {
+                    case 'on_time':
+                        statusText = 'On Time';
+                        statusClass = 'text-success';
+                        break;
+                    case 'late':
+                        statusText = 'Late';
+                        statusClass = 'text-warning';
+                        break;
+                    case 'very_late':
+                        statusText = 'Very Late';
+                        statusClass = 'text-danger';
+                        break;
+                    case 'absent':
+                        statusText = 'Absent';
+                        statusClass = 'text-danger';
+                        break;
+                    default:
+                        statusText = record.status;
+                        statusClass = '';
+                }
+                
+                attendanceTable.row.add([
+                    recordDate,
+                    checkInTime,
+                    checkOutTime,
+                    record.shift_name || `Shift ${record.shift_id}`,
+                    `<span class="${statusClass}">${statusText}</span>`
+                ]);
+            });
+            
+            attendanceTable.draw();
+        }
+        
+        // Update charts
+        function updateCharts(records) {
+            updateStatusChart(records);
+            updateTrendChart(records);
+        }
+        
+        // Update status distribution chart
+        function updateStatusChart(records) {
+            const onTimeCount = records.filter(r => r.status === 'on_time').length;
+            const lateCount = records.filter(r => r.status === 'late').length;
+            const veryLateCount = records.filter(r => r.status === 'very_late').length;
+            const absentCount = records.filter(r => r.status === 'absent').length;
+            
+            const ctx = document.getElementById('status-chart').getContext('2d');
+            
+            // Destroy existing chart if it exists
+            if (statusChart) {
+                statusChart.destroy();
+            }
+            
+            // Create new chart
+            statusChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['On Time', 'Late', 'Very Late', 'Absent'],
+                    datasets: [{
+                        data: [onTimeCount, lateCount, veryLateCount, absentCount],
+                        backgroundColor: ['#198754', '#ffc107', '#dc3545', '#6c757d'],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        }
+                    }
+                }
+            });
+        }
+        
+        // Update trend chart
+        function updateTrendChart(records) {
+            // Group records by date
+            const recordsByDate = {};
+            
+            records.forEach(record => {
+                const date = moment(record.check_in_time).format('YYYY-MM-DD');
+                
+                if (!recordsByDate[date]) {
+                    recordsByDate[date] = {
+                        on_time: 0,
+                        late: 0,
+                        very_late: 0,
+                        absent: 0
+                    };
+                }
+                
+                recordsByDate[date][record.status]++;
+            });
+            
+            // Sort dates
+            const sortedDates = Object.keys(recordsByDate).sort();
+            
+            // Prepare data for chart
+            const labels = sortedDates.map(date => moment(date).format('DD/MM'));
+            const onTimeData = sortedDates.map(date => recordsByDate[date].on_time);
+            const lateData = sortedDates.map(date => recordsByDate[date].late);
+            const veryLateData = sortedDates.map(date => recordsByDate[date].very_late);
+            const absentData = sortedDates.map(date => recordsByDate[date].absent);
+            
+            const ctx = document.getElementById('trend-chart').getContext('2d');
+            
+            // Destroy existing chart if it exists
+            if (trendChart) {
+                trendChart.destroy();
+            }
+            
+            // Create new chart
+            trendChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'On Time',
+                            data: onTimeData,
+                            borderColor: '#198754',
+                            backgroundColor: 'rgba(25, 135, 84, 0.2)',
+                            tension: 0.1
+                        },
+                        {
+                            label: 'Late',
+                            data: lateData,
+                            borderColor: '#ffc107',
+                            backgroundColor: 'rgba(255, 193, 7, 0.2)',
+                            tension: 0.1
+                        },
+                        {
+                            label: 'Very Late',
+                            data: veryLateData,
+                            borderColor: '#dc3545',
+                            backgroundColor: 'rgba(220, 53, 69, 0.2)',
+                            tension: 0.1
+                        },
+                        {
+                            label: 'Absent',
+                            data: absentData,
+                            borderColor: '#6c757d',
+                            backgroundColor: 'rgba(108, 117, 125, 0.2)',
+                            tension: 0.1
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                precision: 0
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        }
+                    }
+                }
+            });
+        }
+        
+        // Export attendance data to CSV
+        function exportAttendanceData() {
+            // Get current filter values for filename
+            const dateRange = $('#date-range').val();
+            const status = $("#status-filter").val();
+            
+            // Create filename
+            const filename = `attendance_history_${dateRange.replace(/\//g, '-').replace(/ - /g, '_to_')}${status ? `_${status}` : ''}.csv`;
+            
+            // Export table data
+            const table = document.getElementById('attendance-table');
+            let csv = [];
+            let rows = table.querySelectorAll('tr');
+            
+            for (let i = 0; i < rows.length; i++) {
+                let row = [], cols = rows[i].querySelectorAll('td, th');
+                
+                for (let j = 0; j < cols.length; j++) {
+                    // Clean the text content (remove HTML tags)
+                    let text = cols[j].textContent.trim();
+                    // Escape double quotes
+                    text = text.replace(/"/g, '""');
+                    // Add quotes to the field
+                    row.push('"' + text + '"');
+                }
+                csv.push(row.join(','));
+            }
+            
+            // Download CSV file
+            let csvContent = csv.join('\n');
+            let blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            let link = document.createElement('a');
+            let url = URL.createObjectURL(blob);
+            link.setAttribute('href', url);
+            link.setAttribute('download', filename);
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            alert(`Report exported as: ${filename}`);
+        }
+        
+        // Initialize
+        document.addEventListener('DOMContentLoaded', async function() {
+            // Check authentication first
+            const isAuthenticated = await checkAuthentication();
+            
+            if (isAuthenticated) {
+                await loadSidebar();
+                initializeComponents();
+                await loadAttendanceData();
+            }
+        });
+    </script>
+</body>
+</html> 

@@ -1,52 +1,10 @@
 [
   {
-    "employee_id": 4,
-    "shift_id": 1,
-    "check_in_time": "2025-06-12 20:05:54",
-    "id": 1,
-    "status": "very_late"
-  },
-  {
-    "employee_id": 5,
-    "shift_id": 1,
-    "check_in_time": "2025-06-12 20:07:38",
-    "id": 2,
-    "status": "very_late"
-  },
-  {
-    "employee_id": 5,
-    "shift_id": 1,
-    "check_in_time": "2025-06-12 20:14:18",
-    "id": 3,
-    "status": "very_late"
-  },
-  {
     "employee_id": 3,
     "shift_id": 1,
-    "check_in_time": "2025-06-12 20:15:38",
+    "check_in_time": "2025-06-12 20:15:00",
     "id": 4,
-    "status": "very_late"
-  },
-  {
-    "employee_id": 5,
-    "shift_id": 1,
-    "check_in_time": "2025-06-12 20:18:04",
-    "id": 5,
-    "status": "very_late"
-  },
-  {
-    "employee_id": 5,
-    "shift_id": 3,
-    "check_in_time": "2025-06-12 20:29:02",
-    "id": 6,
-    "status": "very_late"
-  },
-  {
-    "employee_id": 4,
-    "shift_id": 2,
-    "check_in_time": "2025-06-12 20:30:14",
-    "id": 7,
-    "status": "very_late"
+    "status": "absent"
   },
   {
     "employee_id": 3,
@@ -56,24 +14,17 @@
     "status": "very_late"
   },
   {
-    "employee_id": 5,
-    "shift_id": 2,
-    "check_in_time": "2025-06-12 20:40:28",
-    "id": 9,
-    "status": "very_late"
+    "employee_id": 2,
+    "shift_id": 1,
+    "check_in_time": "2025-06-13 06:21:18",
+    "id": 12,
+    "status": "on_time"
   },
   {
-    "employee_id": 5,
-    "shift_id": 3,
-    "check_in_time": "2025-06-12 20:48:33",
-    "id": 10,
-    "status": "very_late"
-  },
-  {
-    "employee_id": 4,
-    "shift_id": 3,
-    "check_in_time": "2025-06-12 20:50:18",
-    "id": 11,
-    "status": "very_late"
+    "employee_id": 3,
+    "shift_id": 1,
+    "check_in_time": "2025-06-13 06:23:25",
+    "id": 13,
+    "status": "on_time"
   }
 ]

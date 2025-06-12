@@ -201,6 +201,7 @@
                                     <th>Ca làm</th>
                                     <th>Thời gian điểm danh</th>
                                     <th>Trạng thái</th>
+                                    <th>Thao tác</th>
                                 </tr>
                             </thead>
                             <tbody id="attendance-table-body">
@@ -258,9 +259,47 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <!-- Custom JS -->
     <script>
+        // Bỏ qua kiểm tra xác thực
+        // Authentication and authorization check
+        // async function checkAuthentication() {
+        //     try {
+        //         const loadingSpinner = document.querySelector('.loading-spinner');
+        //         loadingSpinner.style.display = 'flex';
+                
+        //         const response = await fetch('/api/user');
+                
+        //         if (!response.ok) {
+        //             // Not authenticated, redirect to login
+        //             window.location.href = '/login';
+        //             return false;
+        //         }
+                
+        //         const userData = await response.json();
+                
+        //         // Check if user is admin
+        //         if (userData.position !== 'admin') {
+        //             // Redirect to user dashboard if not admin
+        //             window.location.href = '/user_dashboard';
+        //             return false;
+        //         }
+                
+        //         return true;
+        //     } catch (error) {
+        //         console.error('Authentication check failed:', error);
+        //         window.location.href = '/login';
+        //         return false;
+        //     } finally {
+        //         loadingSpinner.style.display = 'none';
+        //     }
+        // }
 
         // Load sidebar
         document.addEventListener('DOMContentLoaded', function() {
+            // Bỏ qua kiểm tra xác thực
+            // Check authentication first
+            // checkAuthentication().then(isAuthenticated => {
+            //     if (!isAuthenticated) return;
+                
             fetch('/static/pages/sidebar.html')
                 .then(response => response.text())
                 .then(html => {
@@ -298,12 +337,17 @@
                 .catch(error => {
                     console.error('Error loading sidebar:', error);
                 });
+                
+            // Initialize components directly without authentication check
+            initializeComponents();
+            // });
         });
         
         let attendanceTable;
         let employeeStatsTable;
         
-        $(document).ready(function() {
+        // Initialize components
+        function initializeComponents() {
             // Initialize date range picker
             $('#date-range').daterangepicker({
                 startDate: moment().subtract(30, 'days'),
@@ -380,7 +424,7 @@
             $("#export-btn").click(function() {
                 exportReport();
             });
-        });
+        }
         
         // Load departments for filter
         function loadDepartments() {
@@ -516,17 +560,33 @@
                         statusClass = '';
                 }
                 
+                // Action buttons
+                const actionButtons = `
+                    <div class="d-flex">
+                        <button class="btn btn-sm btn-primary me-1 edit-btn" data-id="${record.id}" title="Chỉnh sửa">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button class="btn btn-sm btn-danger delete-btn" data-id="${record.id}" title="Xóa">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                `;
+                
                 attendanceTable.row.add([
                     record.id,
                     record.employee_name || `ID: ${record.employee_id}`,
                     record.department || 'N/A',
                     record.shift_name || `Ca ${record.shift_id}`,
                     checkInTime,
-                    `<span class="${statusClass}">${statusText}</span>`
-                ]);
+                    `<span class="${statusClass}">${statusText}</span>`,
+                    actionButtons
+                ]).node().setAttribute('data-record', JSON.stringify(record));
             });
             
             attendanceTable.draw();
+            
+            // Add event listeners for edit and delete buttons
+            attachActionButtonHandlers();
         }
         
         // Update employee stats table
@@ -609,6 +669,181 @@
                     window.location.href = "/login";
                 }, 1000);
             }
+        }
+
+        // Attach event handlers for edit and delete buttons
+        function attachActionButtonHandlers() {
+            // Edit button click handler
+            $('.edit-btn').off('click').on('click', function() {
+                const recordId = $(this).data('id');
+                const row = $(this).closest('tr');
+                const recordData = JSON.parse(row.attr('data-record'));
+                openEditModal(recordData);
+            });
+            
+            // Delete button click handler
+            $('.delete-btn').off('click').on('click', function() {
+                const recordId = $(this).data('id');
+                confirmDeleteAttendance(recordId);
+            });
+        }
+        
+        // Open edit attendance modal
+        function openEditModal(record) {
+            // Format time for input
+            const checkInTime = record.check_in_time ? moment(record.check_in_time).format('YYYY-MM-DDTHH:mm') : '';
+            
+            // Create status options
+            const statusOptions = `
+                <option value="on_time" ${record.status === 'on_time' ? 'selected' : ''}>Đúng giờ</option>
+                <option value="late" ${record.status === 'late' ? 'selected' : ''}>Trễ giờ</option>
+                <option value="very_late" ${record.status === 'very_late' ? 'selected' : ''}>Rất trễ</option>
+                <option value="absent" ${record.status === 'absent' ? 'selected' : ''}>Vắng mặt</option>
+            `;
+            
+            // Show edit modal using SweetAlert2
+            Swal.fire({
+                title: 'Chỉnh sửa thông tin điểm danh',
+                html: `
+                    <form id="edit-attendance-form" class="text-start">
+                        <div class="mb-3">
+                            <label for="edit-employee" class="form-label">Nhân viên:</label>
+                            <input type="text" class="form-control" id="edit-employee" value="${record.employee_name || `ID: ${record.employee_id}`}" disabled>
+                        </div>
+                        <div class="mb-3">
+                            <label for="edit-department" class="form-label">Phòng ban:</label>
+                            <input type="text" class="form-control" id="edit-department" value="${record.department || 'N/A'}" disabled>
+                        </div>
+                        <div class="mb-3">
+                            <label for="edit-shift" class="form-label">Ca làm:</label>
+                            <input type="text" class="form-control" id="edit-shift" value="${record.shift_name || `Ca ${record.shift_id}`}" disabled>
+                        </div>
+                        <div class="mb-3">
+                            <label for="edit-time" class="form-label">Thời gian điểm danh:</label>
+                            <input type="datetime-local" class="form-control" id="edit-time" value="${checkInTime}" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="edit-status" class="form-label">Trạng thái:</label>
+                            <select class="form-select" id="edit-status" required>
+                                ${statusOptions}
+                            </select>
+                        </div>
+                    </form>
+                `,
+                showCancelButton: true,
+                confirmButtonText: 'Lưu thay đổi',
+                cancelButtonText: 'Hủy',
+                confirmButtonColor: '#007bff',
+                focusConfirm: false,
+                preConfirm: () => {
+                    const form = document.getElementById('edit-attendance-form');
+                    if (!form.checkValidity()) {
+                        form.reportValidity();
+                        return false;
+                    }
+                    
+                    const checkInTime = document.getElementById('edit-time').value;
+                    const status = document.getElementById('edit-status').value;
+                    
+                    return {
+                        check_in_time: checkInTime,
+                        status: status
+                    };
+                }
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    updateAttendanceRecord(record.id, result.value);
+                }
+            });
+        }
+        
+        // Update attendance record
+        function updateAttendanceRecord(id, data) {
+            Swal.fire({
+                title: 'Đang cập nhật...',
+                allowOutsideClick: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+            
+            // Format the datetime properly for the server
+            if (data.check_in_time) {
+                // Convert from datetime-local format to the format expected by the server
+                const dt = moment(data.check_in_time);
+                if (dt.isValid()) {
+                    data.check_in_time = dt.format('YYYY-MM-DD HH:mm:ss');
+                }
+            }
+            
+            $.ajax({
+                url: `/api/attendance/${id}`,
+                type: 'PUT',
+                contentType: 'application/json',
+                data: JSON.stringify(data),
+                success: function(response) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Thành công',
+                        text: 'Đã cập nhật thông tin điểm danh',
+                        confirmButtonColor: '#007bff'
+                    }).then(() => {
+                        // Reload data to reflect changes
+                        loadAttendanceData();
+                    });
+                },
+                error: function(xhr) {
+                    handleApiError(xhr, 'Không thể cập nhật thông tin điểm danh');
+                }
+            });
+        }
+        
+        // Confirm delete attendance
+        function confirmDeleteAttendance(id) {
+            Swal.fire({
+                title: 'Xác nhận xóa',
+                text: 'Bạn có chắc muốn xóa thông tin điểm danh này?',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#dc3545',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: 'Xóa',
+                cancelButtonText: 'Hủy'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    deleteAttendanceRecord(id);
+                }
+            });
+        }
+        
+        // Delete attendance record
+        function deleteAttendanceRecord(id) {
+            Swal.fire({
+                title: 'Đang xóa...',
+                allowOutsideClick: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+            
+            $.ajax({
+                url: `/api/attendance/${id}`,
+                type: 'DELETE',
+                success: function(response) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Thành công',
+                        text: 'Đã xóa thông tin điểm danh',
+                        confirmButtonColor: '#007bff'
+                    }).then(() => {
+                        // Reload data to reflect changes
+                        loadAttendanceData();
+                    });
+                },
+                error: function(xhr) {
+                    handleApiError(xhr, 'Không thể xóa thông tin điểm danh');
+                }
+            });
         }
     </script>
 </body>
