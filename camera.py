@@ -9,55 +9,55 @@ import onnxruntime
 import asyncio
 from controllers.employee_controller import EmployeeController  # Changed import
 import joblib
-import RPi.GPIO as GPIO  # For servo control
+import serial  # For Arduino communication
 
 class ServoController:
-    def __init__(self, pin=18):  # GPIO18 is commonly used for servo
-        self.pin = pin
+    def __init__(self, port='/dev/ttyUSB0', baudrate=9600):  # Adjust port as needed
+        self.port = port
+        self.baudrate = baudrate
         self.is_open = False
-        self.setup_gpio()
+        self.setup_serial()
         
-    def setup_gpio(self):
-        """Initialize GPIO for servo control"""
+    def setup_serial(self):
+        """Initialize serial communication with Arduino"""
         try:
-            GPIO.setmode(GPIO.BCM)
-            GPIO.setup(self.pin, GPIO.OUT)
-            self.pwm = GPIO.PWM(self.pin, 50)  # 50Hz frequency
-            self.pwm.start(0)
-            print("Servo GPIO initialized successfully")
+            self.serial = serial.Serial(self.port, self.baudrate, timeout=1)
+            time.sleep(2)  # Wait for Arduino to reset
+            print("Arduino serial connection initialized successfully")
         except Exception as e:
-            print(f"Error initializing servo GPIO: {str(e)}")
+            print(f"Error initializing Arduino serial connection: {str(e)}")
+            self.serial = None
             
     def open_door(self):
-        """Open the door by rotating servo to 90 degrees"""
+        """Open the door by sending 'o' command to Arduino"""
         try:
-            if not self.is_open:
-                self.pwm.ChangeDutyCycle(7.5)  # 90 degrees
-                time.sleep(1)  # Wait for servo to reach position
+            if not self.is_open and self.serial:
+                self.serial.write(b'o')  # Send 'o' command to open door
+                time.sleep(1.5)  # Wait for servo to complete movement
                 self.is_open = True
                 print("Door opened")
         except Exception as e:
             print(f"Error opening door: {str(e)}")
             
     def close_door(self):
-        """Close the door by rotating servo to 0 degrees"""
+        """Close the door by sending 'c' command to Arduino"""
         try:
-            if self.is_open:
-                self.pwm.ChangeDutyCycle(2.5)  # 0 degrees
-                time.sleep(1)  # Wait for servo to reach position
+            if self.is_open and self.serial:
+                self.serial.write(b'c')  # Send 'c' command to close door
+                time.sleep(1.5)  # Wait for servo to complete movement
                 self.is_open = False
                 print("Door closed")
         except Exception as e:
             print(f"Error closing door: {str(e)}")
             
     def cleanup(self):
-        """Clean up GPIO resources"""
+        """Clean up serial connection"""
         try:
-            self.pwm.stop()
-            GPIO.cleanup()
-            print("Servo GPIO cleaned up")
+            if self.serial:
+                self.serial.close()
+                print("Arduino serial connection closed")
         except Exception as e:
-            print(f"Error cleaning up servo GPIO: {str(e)}")
+            print(f"Error closing Arduino serial connection: {str(e)}")
 
 class FaceScanner:
     def __init__(self):
@@ -144,7 +144,7 @@ onnx_session = onnxruntime.InferenceSession("R50.onnx")
 face_scanner = FaceScanner()
 
 # Initialize servo controller
-servo_controller = ServoController()
+servo_controller = ServoController(port='COM6')  # Change to your Arduino's port
 
 def process_with_R50(face_image: np.ndarray) -> np.ndarray:
     """
