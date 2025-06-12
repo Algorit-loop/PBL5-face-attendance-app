@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Department Management</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #f8f9fa;
+        }
+        .main-container {
+            display: flex;
+            min-height: 100vh;
+        }
+        /* Content Area Styles */
+        .content-area {
+            margin-left: 250px;
+            flex-grow: 1;
+            padding: 20px;
+        }
+        .department-container {
+            padding: 20px;
+        }
+        .department-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .department-table {
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            overflow: hidden;
+        }
+        .table {
+            margin-bottom: 0;
+        }
+        .table th {
+            background-color: #f8f9fa;
+            font-weight: 600;
+            border-bottom-width: 1px;
+        }
+        .table td {
+            vertical-align: middle;
+        }
+        .loading-spinner {
+            display: none;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 1001;
+            justify-content: center;
+            align-items: center;
+        }
+        .loading-spinner div {
+            width: 3rem;
+            height: 3rem;
+        }
+        @media (max-width: 768px) {
+            .sidebar {
+                transform: translateX(-100%);
+                transition: transform 0.3s ease;
+            }
+            .sidebar.show {
+                transform: translateX(0);
+            }
+            .content-area {
+                margin-left: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="main-container">
+        <!-- Include Sidebar -->
+        <div id="sidebar-container"></div>
+
+        <!-- Content Area -->
+        <div class="content-area">
+            <div class="department-container">
+                <!-- Header -->
+                <div class="department-header">
+                    <h1 class="mb-0">Department Management</h1>
+                    <button class="btn btn-primary" id="addDepartmentBtn">
+                        <i class="fas fa-plus me-2"></i>Add Department
+                    </button>
+                </div>
+                
+                <!-- Department Table -->
+                <div class="department-table">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th style="width: 70px">ID</th>
+                                <th>Department Name</th>
+                                <th>Description</th>
+                                <th style="width: 150px">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="department-list">
+                            <!-- Department list will be populated by JavaScript -->
+                            <tr>
+                                <td colspan="4" class="text-center py-4">
+                                    <div class="spinner-border text-primary" role="status">
+                                        <span class="visually-hidden">Loading...</span>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add/Edit Department Modal -->
+    <div class="modal fade" id="departmentModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalTitle">
+                        <i class="fas fa-building me-2"></i>
+                        <span id="modalTitleText">Add Department</span>
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="departmentForm">
+                        <input type="hidden" id="departmentId">
+                        <div class="mb-3">
+                            <label for="departmentName" class="form-label">Department Name</label>
+                            <input type="text" class="form-control" id="departmentName" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="departmentDescription" class="form-label">Description</label>
+                            <textarea class="form-control" id="departmentDescription" rows="3"></textarea>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="saveDepartmentBtn">Save</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div class="modal fade" id="deleteModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="deleteModalTitle">
+                        <i class="fas fa-exclamation-triangle text-danger me-2"></i>
+                        Confirm Delete
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Are you sure you want to delete this department? This action cannot be undone.</p>
+                    <p class="mb-0"><strong>Department: </strong><span id="deleteDepartmentName"></span></p>
+                    <input type="hidden" id="deleteDepartmentId">
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-danger" id="confirmDeleteBtn">Delete</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading Spinner -->
+    <div class="loading-spinner">
+        <div class="spinner-border text-light" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Global variables
+        const departmentList = document.getElementById('department-list');
+        const departmentModal = new bootstrap.Modal(document.getElementById('departmentModal'));
+        const deleteModal = new bootstrap.Modal(document.getElementById('deleteModal'));
+        const loadingSpinner = document.querySelector('.loading-spinner');
+        let departments = [];
+
+        // Load sidebar
+        function loadSidebar() {
+            return fetch('/static/pages/sidebar.html')
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`Failed to load sidebar: ${response.status} ${response.statusText}`);
+                    }
+                    return response.text();
+                })
+                .then(html => {
+                    console.log('Sidebar HTML loaded successfully');
+                    const sidebarContainer = document.getElementById('sidebar-container');
+                    if (!sidebarContainer) {
+                        console.error('Sidebar container not found in the DOM');
+                        return;
+                    }
+                    
+                    sidebarContainer.innerHTML = html;
+                    
+                    // Highlight current page in sidebar after it's loaded
+                    const currentPath = window.location.pathname;
+                    const navLinks = document.querySelectorAll('.nav-link');
+                    
+                    navLinks.forEach(link => {
+                        if (link.getAttribute('href') === currentPath) {
+                            link.classList.add('active');
+                        } else {
+                            link.classList.remove('active');
+                        }
+                    });
+                    
+                    // Setup logout button
+                    setupLogoutButton();
+                    
+                    return true;
+                })
+                .catch(error => {
+                    console.error('Error loading sidebar:', error);
+                    return false;
+                });
+        }
+
+        // Load user info
+        async function loadUserInfo() {
+            try {
+                console.log('Loading user info...');
+                const response = await fetch('/api/user');
+                console.log('User info response status:', response.status);
+                if (!response.ok) {
+                    throw new Error(`Failed to load user info: ${response.status} ${response.statusText}`);
+                }
+                const data = await response.json();
+                console.log('User info received:', data);
+                
+                // Check if sidebar elements exist before updating
+                const usernameElement = document.getElementById('currentUsername');
+                const roleElement = document.getElementById('userRole');
+                
+                if (usernameElement) {
+                    usernameElement.textContent = data.full_name || data.username;
+                }
+                if (roleElement) {
+                    roleElement.textContent = data.position === 'admin' ? 'Administrator' : 'Employee';
+                }
+                
+                // Check if user is admin, redirect if not
+                if (data.position !== 'admin') {
+                    console.warn('User is not an admin, redirecting to dashboard');
+                    window.location.href = '/user_dashboard';
+                    return false;
+                }
+                
+                return true;
+            } catch (error) {
+                console.error('Error loading user info:', error);
+                alert('Error loading user information. Please try logging in again.');
+                window.location.href = '/login';
+                return false;
+            }
+        }
+
+        // Handle logout - will be set up after sidebar is loaded
+        function setupLogoutButton() {
+            const logoutBtn = document.getElementById('logoutBtn');
+            if (logoutBtn) {
+                logoutBtn.addEventListener('click', async function() {
+                    try {
+                        loadingSpinner.style.display = 'flex';
+                        const response = await fetch('/api/logout', {
+                            method: 'POST'
+                        });
+                        if (response.ok) {
+                            window.location.href = '/login';
+                        }
+                    } catch (error) {
+                        console.error('Error during logout:', error);
+                    } finally {
+                        loadingSpinner.style.display = 'none';
+                    }
+                });
+                console.log('Logout button event listener attached');
+            } else {
+                console.warn('Logout button not found in the DOM');
+            }
+        }
+
+        // Load departments
+        async function loadDepartments() {
+            try {
+                console.log('Loading departments...');
+                loadingSpinner.style.display = 'flex';
+                
+                // Use credentials to ensure cookies are sent
+                const response = await fetch('/api/departments', {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json'
+                    },
+                    credentials: 'include' // Important for session cookies
+                });
+                
+                console.log('API response status:', response.status);
+                
+                // Handle unauthorized or forbidden
+                if (response.status === 401) {
+                    console.error('Unauthorized access. Redirecting to login...');
+                    window.location.href = '/login';
+                    return;
+                }
+                
+                if (response.status === 403) {
+                    console.error('Forbidden access. User is not admin.');
+                    window.location.href = '/user_dashboard';
+                    return;
+                }
+                
+                if (!response.ok) {
+                    throw new Error(`Failed to load departments: ${response.status} ${response.statusText}`);
+                }
+                
+                const data = await response.json();
+                console.log('Received departments data:', data);
+                
+                // Check if data is an array
+                if (!Array.isArray(data)) {
+                    console.error('Expected array of departments but got:', data);
+                    throw new Error('Invalid data format received from server');
+                }
+                
+                departments = data;
+                renderDepartments();
+            } catch (error) {
+                console.error('Error loading departments:', error);
+                departmentList.innerHTML = `
+                    <tr>
+                        <td colspan="4" class="text-center py-4 text-danger">
+                            <i class="fas fa-exclamation-circle me-2"></i>
+                            ${error.message || 'Error loading departments. Please try again.'}
+                        </td>
+                    </tr>
+                `;
+            } finally {
+                loadingSpinner.style.display = 'none';
+            }
+        }
+
+        // Render departments
+        function renderDepartments() {
+            if (departments.length === 0) {
+                departmentList.innerHTML = `
+                    <tr>
+                        <td colspan="4" class="text-center py-4 text-muted">
+                            No departments found. Add your first department.
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+            
+            departmentList.innerHTML = departments.map(department => {
+                return `
+                <tr>
+                    <td>${department.id}</td>
+                    <td>${department.name}</td>
+                    <td>${department.description || '-'}</td>
+                    <td>
+                        <div class="btn-group">
+                            <button class="btn btn-sm btn-outline-primary" onclick="openEditModal(${department.id})">
+                                <i class="fas fa-edit me-1"></i>Edit
+                            </button>
+                            <button class="btn btn-sm btn-outline-danger" onclick="openDeleteModal(${department.id})">
+                                <i class="fas fa-trash me-1"></i>Delete
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+                `;
+            }).join('');
+        }
+
+        // Open add department modal
+        document.getElementById('addDepartmentBtn').addEventListener('click', function() {
+            document.getElementById('modalTitleText').textContent = 'Add Department';
+            document.getElementById('departmentId').value = '';
+            document.getElementById('departmentName').value = '';
+            document.getElementById('departmentDescription').value = '';
+            departmentModal.show();
+        });
+
+        // Open edit modal
+        function openEditModal(departmentId) {
+            const department = departments.find(d => d.id === departmentId);
+            if (!department) return;
+            
+            document.getElementById('modalTitleText').textContent = 'Edit Department';
+            document.getElementById('departmentId').value = department.id;
+            document.getElementById('departmentName').value = department.name || '';
+            document.getElementById('departmentDescription').value = department.description || '';
+            
+            departmentModal.show();
+        }
+
+        // Open delete modal
+        function openDeleteModal(departmentId) {
+            const department = departments.find(d => d.id === departmentId);
+            if (!department) return;
+            
+            document.getElementById('deleteDepartmentName').textContent = department.name;
+            document.getElementById('deleteDepartmentId').value = department.id;
+            
+            deleteModal.show();
+        }
+
+        // Save department
+        document.getElementById('saveDepartmentBtn').addEventListener('click', async function() {
+            const form = document.getElementById('departmentForm');
+            if (!form.checkValidity()) {
+                form.reportValidity();
+                return;
+            }
+            
+            const departmentId = document.getElementById('departmentId').value;
+            const isEdit = !!departmentId;
+            
+            const departmentData = {
+                name: document.getElementById('departmentName').value,
+                description: document.getElementById('departmentDescription').value
+            };
+            
+            try {
+                loadingSpinner.style.display = 'flex';
+                const url = isEdit ? `/api/departments/${departmentId}` : '/api/departments';
+                const method = isEdit ? 'PUT' : 'POST';
+                
+                const response = await fetch(url, {
+                    method: method,
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(departmentData)
+                });
+                
+                const responseData = await response.json();
+                
+                if (!responseData.success) {
+                    throw new Error(responseData.message || 'Failed to save department');
+                }
+                
+                alert(isEdit ? 'Department updated successfully!' : 'Department added successfully!');
+                departmentModal.hide();
+                await loadDepartments();
+            } catch (error) {
+                console.error('Error saving department:', error);
+                alert(error.message || 'Error saving department. Please try again.');
+            } finally {
+                loadingSpinner.style.display = 'none';
+            }
+        });
+
+        // Delete department
+        document.getElementById('confirmDeleteBtn').addEventListener('click', async function() {
+            const departmentId = document.getElementById('deleteDepartmentId').value;
+            if (!departmentId) return;
+            
+            try {
+                loadingSpinner.style.display = 'flex';
+                const response = await fetch(`/api/departments/${departmentId}`, {
+                    method: 'DELETE'
+                });
+                
+                const responseData = await response.json();
+                
+                if (!responseData.success) {
+                    throw new Error(responseData.message || 'Failed to delete department');
+                }
+                
+                alert('Department deleted successfully!');
+                deleteModal.hide();
+                await loadDepartments();
+            } catch (error) {
+                console.error('Error deleting department:', error);
+                alert(error.message || 'Error deleting department. Please try again.');
+            } finally {
+                loadingSpinner.style.display = 'none';
+            }
+        });
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', async function() {
+            console.log('DOM content loaded, initializing...');
+            
+            try {
+                // First load the sidebar
+                console.log('Loading sidebar...');
+                await loadSidebar();
+                
+                // Then load user info and check authentication
+                const isAuthenticated = await loadUserInfo();
+                
+                // Only proceed if authenticated
+                if (isAuthenticated) {
+                    console.log('User authenticated, loading departments...');
+                    await loadDepartments();
+                    
+                    // Set global functions
+                    window.openEditModal = openEditModal;
+                    window.openDeleteModal = openDeleteModal;
+                }
+            } catch (error) {
+                console.error('Error during initialization:', error);
+                alert('An error occurred while loading the page. Please try refreshing.');
+            }
+        });
+    </script>
+</body>
+</html>

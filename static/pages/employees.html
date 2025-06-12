@@ -293,11 +293,7 @@
                                     <span class="input-group-text"><i class="fas fa-building"></i></span>
                                     <select class="form-control" id="department" required>
                                         <option value="">Select Department</option>
-                                        <option value="IT">IT</option>
-                                        <option value="HR">HR</option>
-                                        <option value="Finance">Finance</option>
-                                        <option value="Marketing">Marketing</option>
-                                        <option value="Operations">Operations</option>
+                                        <!-- Departments will be loaded dynamically -->
                                     </select>
                                 </div>
                             </div>
@@ -307,14 +303,7 @@
                                     <span class="input-group-text"><i class="fas fa-id-badge"></i></span>
                                     <select class="form-control" id="position" required>
                                         <option value="">Select Position</option>
-                                        <option value="Manager">Manager</option>
-                                        <option value="Team Lead">Team Lead</option>
-                                        <option value="Developer">Developer</option>
-                                        <option value="Designer">Designer</option>
-                                        <option value="HR Officer">HR Officer</option>
-                                        <option value="Accountant">Accountant</option>
-                                        <option value="Marketing Specialist">Marketing Specialist</option>
-                                        <option value="admin">Administrator</option>
+                                        <!-- Positions will be loaded dynamically -->
                                     </select>
                                 </div>
                             </div>
@@ -643,10 +632,73 @@
             }).join('');
         }
 
+        // Load departments from API
+        async function loadDepartments() {
+            try {
+                const response = await fetch('/api/departments');
+                if (!response.ok) {
+                    throw new Error(`Failed to load departments: ${response.status}`);
+                }
+                
+                const departments = await response.json();
+                const departmentSelect = document.getElementById('department');
+                
+                // Clear existing options except the first one
+                while (departmentSelect.options.length > 1) {
+                    departmentSelect.remove(1);
+                }
+                
+                // Add departments from API
+                departments.forEach(dept => {
+                    const option = document.createElement('option');
+                    option.value = dept.name;
+                    option.textContent = dept.name;
+                    departmentSelect.appendChild(option);
+                });
+                
+                console.log('Departments loaded successfully');
+            } catch (error) {
+                console.error('Error loading departments:', error);
+            }
+        }
+        
+        // Load positions from API
+        async function loadPositions() {
+            try {
+                const response = await fetch('/api/positions');
+                if (!response.ok) {
+                    throw new Error(`Failed to load positions: ${response.status}`);
+                }
+                
+                const positions = await response.json();
+                const positionSelect = document.getElementById('position');
+                
+                // Clear existing options except the first one
+                while (positionSelect.options.length > 1) {
+                    positionSelect.remove(1);
+                }
+                
+                // Add positions from API
+                positions.forEach(pos => {
+                    const option = document.createElement('option');
+                    option.value = pos.name;
+                    option.textContent = pos.name;
+                    positionSelect.appendChild(option);
+                });
+                
+                console.log('Positions loaded successfully');
+            } catch (error) {
+                console.error('Error loading positions:', error);
+            }
+        }
+        
         // Open edit modal
-        function openEditModal(employeeId) {
+        async function openEditModal(employeeId) {
             const employee = employees.find(e => e.id === employeeId);
             if (!employee) return;
+            
+            // Load departments and positions before showing the modal
+            await Promise.all([loadDepartments(), loadPositions()]);
             
             document.getElementById('modalTitleText').textContent = 'Edit Employee';
             document.getElementById('employeeId').value = employee.id;
@@ -896,6 +948,10 @@
                 if (isAuthenticated) {
                     console.log('User authenticated, loading employees...');
                     await loadEmployees();
+                    
+                    // Load departments and positions for the add employee modal
+                    await Promise.all([loadDepartments(), loadPositions()]);
+                    
                     checkUrlParams();
                     
                     // Set global functions

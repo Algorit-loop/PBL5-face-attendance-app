@@ -16,7 +16,7 @@ import uvicorn
 import base64
 import sys
 
-from models import Employee, APIResponse, Shift, ShiftCreate, ShiftUpdate, Attendance, AttendanceCreate, AttendanceFilter
+from models import Employee, APIResponse, Shift, ShiftCreate, ShiftUpdate, Attendance, AttendanceCreate, AttendanceFilter, Department, Position
 from controllers.employee_controller import EmployeeController
 from controllers.shift_controller import ShiftController
 from controllers.attendance_controller import AttendanceController
@@ -891,6 +891,326 @@ async def check_directory(request: Request, data: dict):
             status_code=500,
             content={"success": False, "message": str(e)}
         )
+
+# Department and Position API endpoints
+@app.get("/api/departments")
+async def get_departments(request: Request):
+    try:
+        session = login_required(request)
+        # Read departments from JSON file
+        try:
+            with open("departments.json", "r", encoding="utf-8") as f:
+                departments = json.load(f)
+            return departments
+        except FileNotFoundError:
+            # Return empty list if file doesn't exist
+            return []
+    except HTTPException as e:
+        return e
+
+@app.post("/api/departments")
+async def create_department(request: Request, department: Department):
+    try:
+        session = admin_required(request)
+        # Read existing departments
+        try:
+            with open("departments.json", "r", encoding="utf-8") as f:
+                departments = json.load(f)
+        except FileNotFoundError:
+            departments = []
+        
+        # Generate new ID
+        new_id = 1
+        if departments:
+            new_id = max(d["id"] for d in departments) + 1
+        
+        # Create new department
+        new_department = {
+            "id": new_id,
+            "name": department.name,
+            "description": department.description or ""
+        }
+        
+        # Add to list and save
+        departments.append(new_department)
+        with open("departments.json", "w", encoding="utf-8") as f:
+            json.dump(departments, f, indent=2)
+        
+        return JSONResponse(content={
+            "success": True,
+            "message": "Department created successfully",
+            "department": new_department
+        })
+    except HTTPException as e:
+        return JSONResponse(
+            status_code=e.status_code,
+            content={"success": False, "message": e.detail}
+        )
+    except Exception as e:
+        return JSONResponse(
+            status_code=500,
+            content={"success": False, "message": str(e)}
+        )
+
+@app.put("/api/departments/{department_id}")
+async def update_department(request: Request, department_id: int, department: Department):
+    try:
+        session = admin_required(request)
+        # Read existing departments
+        try:
+            with open("departments.json", "r", encoding="utf-8") as f:
+                departments = json.load(f)
+        except FileNotFoundError:
+            return JSONResponse(
+                status_code=404,
+                content={"success": False, "message": "Departments not found"}
+            )
+        
+        # Find department to update
+        for i, dept in enumerate(departments):
+            if dept["id"] == department_id:
+                # Update department
+                departments[i]["name"] = department.name
+                departments[i]["description"] = department.description or ""
+                
+                # Save changes
+                with open("departments.json", "w", encoding="utf-8") as f:
+                    json.dump(departments, f, indent=2)
+                
+                return JSONResponse(content={
+                    "success": True,
+                    "message": "Department updated successfully",
+                    "department": departments[i]
+                })
+        
+        # Department not found
+        return JSONResponse(
+            status_code=404,
+            content={"success": False, "message": f"Department with ID {department_id} not found"}
+        )
+    except HTTPException as e:
+        return JSONResponse(
+            status_code=e.status_code,
+            content={"success": False, "message": e.detail}
+        )
+    except Exception as e:
+        return JSONResponse(
+            status_code=500,
+            content={"success": False, "message": str(e)}
+        )
+
+@app.delete("/api/departments/{department_id}")
+async def delete_department(request: Request, department_id: int):
+    try:
+        session = admin_required(request)
+        # Read existing departments
+        try:
+            with open("departments.json", "r", encoding="utf-8") as f:
+                departments = json.load(f)
+        except FileNotFoundError:
+            return JSONResponse(
+                status_code=404,
+                content={"success": False, "message": "Departments not found"}
+            )
+        
+        # Find department to delete
+        for i, dept in enumerate(departments):
+            if dept["id"] == department_id:
+                # Remove department
+                del departments[i]
+                
+                # Save changes
+                with open("departments.json", "w", encoding="utf-8") as f:
+                    json.dump(departments, f, indent=2)
+                
+                return JSONResponse(content={
+                    "success": True,
+                    "message": "Department deleted successfully"
+                })
+        
+        # Department not found
+        return JSONResponse(
+            status_code=404,
+            content={"success": False, "message": f"Department with ID {department_id} not found"}
+        )
+    except HTTPException as e:
+        return JSONResponse(
+            status_code=e.status_code,
+            content={"success": False, "message": e.detail}
+        )
+    except Exception as e:
+        return JSONResponse(
+            status_code=500,
+            content={"success": False, "message": str(e)}
+        )
+
+@app.get("/api/positions")
+async def get_positions(request: Request):
+    try:
+        session = login_required(request)
+        # Read positions from JSON file
+        try:
+            with open("positions.json", "r", encoding="utf-8") as f:
+                positions = json.load(f)
+            return positions
+        except FileNotFoundError:
+            # Return empty list if file doesn't exist
+            return []
+    except HTTPException as e:
+        return e
+
+@app.post("/api/positions")
+async def create_position(request: Request, position: Position):
+    try:
+        session = admin_required(request)
+        # Read existing positions
+        try:
+            with open("positions.json", "r", encoding="utf-8") as f:
+                positions = json.load(f)
+        except FileNotFoundError:
+            positions = []
+        
+        # Generate new ID
+        new_id = 1
+        if positions:
+            new_id = max(p["id"] for p in positions) + 1
+        
+        # Create new position
+        new_position = {
+            "id": new_id,
+            "name": position.name,
+            "description": position.description or ""
+        }
+        
+        # Add to list and save
+        positions.append(new_position)
+        with open("positions.json", "w", encoding="utf-8") as f:
+            json.dump(positions, f, indent=2)
+        
+        return JSONResponse(content={
+            "success": True,
+            "message": "Position created successfully",
+            "position": new_position
+        })
+    except HTTPException as e:
+        return JSONResponse(
+            status_code=e.status_code,
+            content={"success": False, "message": e.detail}
+        )
+    except Exception as e:
+        return JSONResponse(
+            status_code=500,
+            content={"success": False, "message": str(e)}
+        )
+
+@app.put("/api/positions/{position_id}")
+async def update_position(request: Request, position_id: int, position: Position):
+    try:
+        session = admin_required(request)
+        # Read existing positions
+        try:
+            with open("positions.json", "r", encoding="utf-8") as f:
+                positions = json.load(f)
+        except FileNotFoundError:
+            return JSONResponse(
+                status_code=404,
+                content={"success": False, "message": "Positions not found"}
+            )
+        
+        # Find position to update
+        for i, pos in enumerate(positions):
+            if pos["id"] == position_id:
+                # Update position
+                positions[i]["name"] = position.name
+                positions[i]["description"] = position.description or ""
+                
+                # Save changes
+                with open("positions.json", "w", encoding="utf-8") as f:
+                    json.dump(positions, f, indent=2)
+                
+                return JSONResponse(content={
+                    "success": True,
+                    "message": "Position updated successfully",
+                    "position": positions[i]
+                })
+        
+        # Position not found
+        return JSONResponse(
+            status_code=404,
+            content={"success": False, "message": f"Position with ID {position_id} not found"}
+        )
+    except HTTPException as e:
+        return JSONResponse(
+            status_code=e.status_code,
+            content={"success": False, "message": e.detail}
+        )
+    except Exception as e:
+        return JSONResponse(
+            status_code=500,
+            content={"success": False, "message": str(e)}
+        )
+
+@app.delete("/api/positions/{position_id}")
+async def delete_position(request: Request, position_id: int):
+    try:
+        session = admin_required(request)
+        # Read existing positions
+        try:
+            with open("positions.json", "r", encoding="utf-8") as f:
+                positions = json.load(f)
+        except FileNotFoundError:
+            return JSONResponse(
+                status_code=404,
+                content={"success": False, "message": "Positions not found"}
+            )
+        
+        # Find position to delete
+        for i, pos in enumerate(positions):
+            if pos["id"] == position_id:
+                # Remove position
+                del positions[i]
+                
+                # Save changes
+                with open("positions.json", "w", encoding="utf-8") as f:
+                    json.dump(positions, f, indent=2)
+                
+                return JSONResponse(content={
+                    "success": True,
+                    "message": "Position deleted successfully"
+                })
+        
+        # Position not found
+        return JSONResponse(
+            status_code=404,
+            content={"success": False, "message": f"Position with ID {position_id} not found"}
+        )
+    except HTTPException as e:
+        return JSONResponse(
+            status_code=e.status_code,
+            content={"success": False, "message": e.detail}
+        )
+    except Exception as e:
+        return JSONResponse(
+            status_code=500,
+            content={"success": False, "message": str(e)}
+        )
+
+# Page routes for department and position management
+@app.get("/departments")
+async def departments_page(request: Request):
+    try:
+        session = admin_required(request)
+        return RedirectResponse(url="/static/pages/departments.html")
+    except HTTPException:
+        return RedirectResponse(url="/login")
+
+@app.get("/positions")
+async def positions_page(request: Request):
+    try:
+        session = admin_required(request)
+        return RedirectResponse(url="/static/pages/positions.html")
+    except HTTPException:
+        return RedirectResponse(url="/login")
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)

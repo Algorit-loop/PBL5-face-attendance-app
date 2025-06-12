@@ -385,22 +385,15 @@
         // Load departments for filter
         function loadDepartments() {
             $.ajax({
-                url: "/api/employees",
+                url: "/api/departments",
                 type: "GET",
                 success: function(data) {
-                    const departments = new Set();
-                    data.forEach(function(employee) {
-                        if (employee.department) {
-                            departments.add(employee.department);
-                        }
-                    });
-                    
                     const departmentFilter = $("#department-filter");
                     departmentFilter.empty();
                     departmentFilter.append('<option value="">Tất cả phòng ban</option>');
                     
-                    departments.forEach(function(department) {
-                        departmentFilter.append(`<option value="${department}">${department}</option>`);
+                    data.forEach(function(department) {
+                        departmentFilter.append(`<option value="${department.name}">${department.name}</option>`);
                     });
                 },
                 error: function(xhr) {

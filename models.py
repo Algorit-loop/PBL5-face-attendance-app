@@ -2,6 +2,22 @@ from typing import Optional, List
 from pydantic import BaseModel, Field, EmailStr
 from datetime import datetime, time
 
+class Department(BaseModel):
+    """
+    Model for department data
+    """
+    id: Optional[int] = None
+    name: str
+    description: Optional[str] = None
+
+class Position(BaseModel):
+    """
+    Model for position data
+    """
+    id: Optional[int] = None
+    name: str
+    description: Optional[str] = None
+
 class Employee(BaseModel):
     """
     Model for employee data

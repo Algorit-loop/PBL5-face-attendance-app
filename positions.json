@@ -1,0 +1,37 @@
+[
+  {
+    "id": 2,
+    "name": "Team Lead",
+    "description": "Team Leader"
+  },
+  {
+    "id": 3,
+    "name": "Developer",
+    "description": "Software Developer"
+  },
+  {
+    "id": 4,
+    "name": "Designer",
+    "description": "UI/UX Designer"
+  },
+  {
+    "id": 5,
+    "name": "HR Officer",
+    "description": "Human Resources Officer"
+  },
+  {
+    "id": 6,
+    "name": "Accountant",
+    "description": "Finance and Accounting Officer"
+  },
+  {
+    "id": 7,
+    "name": "Marketing Specialist",
+    "description": "Marketing and Sales Specialist"
+  },
+  {
+    "id": 8,
+    "name": "admin",
+    "description": "System Administrator"
+  }
+]

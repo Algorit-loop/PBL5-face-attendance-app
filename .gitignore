@@ -8,4 +8,6 @@ R18.onnx
 R50.onnx
 
 face_data/
+img_historyreport/
+__pycache__/
 

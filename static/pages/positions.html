@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Position Management</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #f8f9fa;
+        }
+        .main-container {
+            display: flex;
+            min-height: 100vh;
+        }
+        /* Content Area Styles */
+        .content-area {
+            margin-left: 250px;
+            flex-grow: 1;
+            padding: 20px;
+        }
+        .position-container {
+            padding: 20px;
+        }
+        .position-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .position-table {
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            overflow: hidden;
+        }
+        .table {
+            margin-bottom: 0;
+        }
+        .table th {
+            background-color: #f8f9fa;
+            font-weight: 600;
+            border-bottom-width: 1px;
+        }
+        .table td {
+            vertical-align: middle;
+        }
+        .loading-spinner {
+            display: none;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 1001;
+            justify-content: center;
+            align-items: center;
+        }
+        .loading-spinner div {
+            width: 3rem;
+            height: 3rem;
+        }
+        @media (max-width: 768px) {
+            .sidebar {
+                transform: translateX(-100%);
+                transition: transform 0.3s ease;
+            }
+            .sidebar.show {
+                transform: translateX(0);
+            }
+            .content-area {
+                margin-left: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="main-container">
+        <!-- Include Sidebar -->
+        <div id="sidebar-container"></div>
+
+        <!-- Content Area -->
+        <div class="content-area">
+            <div class="position-container">
+                <!-- Header -->
+                <div class="position-header">
+                    <h1 class="mb-0">Position Management</h1>
+                    <button class="btn btn-primary" id="addPositionBtn">
+                        <i class="fas fa-plus me-2"></i>Add Position
+                    </button>
+                </div>
+                
+                <!-- Position Table -->
+                <div class="position-table">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th style="width: 70px">ID</th>
+                                <th>Position Name</th>
+                                <th>Description</th>
+                                <th style="width: 150px">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="position-list">
+                            <!-- Position list will be populated by JavaScript -->
+                            <tr>
+                                <td colspan="4" class="text-center py-4">
+                                    <div class="spinner-border text-primary" role="status">
+                                        <span class="visually-hidden">Loading...</span>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add/Edit Position Modal -->
+    <div class="modal fade" id="positionModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalTitle">
+                        <i class="fas fa-id-badge me-2"></i>
+                        <span id="modalTitleText">Add Position</span>
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="positionForm">
+                        <input type="hidden" id="positionId">
+                        <div class="mb-3">
+                            <label for="positionName" class="form-label">Position Name</label>
+                            <input type="text" class="form-control" id="positionName" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="positionDescription" class="form-label">Description</label>
+                            <textarea class="form-control" id="positionDescription" rows="3"></textarea>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="savePositionBtn">Save</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div class="modal fade" id="deleteModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="deleteModalTitle">
+                        <i class="fas fa-exclamation-triangle text-danger me-2"></i>
+                        Confirm Delete
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Are you sure you want to delete this position? This action cannot be undone.</p>
+                    <p class="mb-0"><strong>Position: </strong><span id="deletePositionName"></span></p>
+                    <input type="hidden" id="deletePositionId">
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-danger" id="confirmDeleteBtn">Delete</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading Spinner -->
+    <div class="loading-spinner">
+        <div class="spinner-border text-light" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Global variables
+        const positionList = document.getElementById('position-list');
+        const positionModal = new bootstrap.Modal(document.getElementById('positionModal'));
+        const deleteModal = new bootstrap.Modal(document.getElementById('deleteModal'));
+        const loadingSpinner = document.querySelector('.loading-spinner');
+        let positions = [];
+
+        // Load sidebar
+        function loadSidebar() {
+            return fetch('/static/pages/sidebar.html')
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`Failed to load sidebar: ${response.status} ${response.statusText}`);
+                    }
+                    return response.text();
+                })
+                .then(html => {
+                    console.log('Sidebar HTML loaded successfully');
+                    const sidebarContainer = document.getElementById('sidebar-container');
+                    if (!sidebarContainer) {
+                        console.error('Sidebar container not found in the DOM');
+                        return;
+                    }
+                    
+                    sidebarContainer.innerHTML = html;
+                    
+                    // Highlight current page in sidebar after it's loaded
+                    const currentPath = window.location.pathname;
+                    const navLinks = document.querySelectorAll('.nav-link');
+                    
+                    navLinks.forEach(link => {
+                        if (link.getAttribute('href') === currentPath) {
+                            link.classList.add('active');
+                        } else {
+                            link.classList.remove('active');
+                        }
+                    });
+                    
+                    // Setup logout button
+                    setupLogoutButton();
+                    
+                    return true;
+                })
+                .catch(error => {
+                    console.error('Error loading sidebar:', error);
+                    return false;
+                });
+        }
+
+        // Load user info
+        async function loadUserInfo() {
+            try {
+                console.log('Loading user info...');
+                const response = await fetch('/api/user');
+                console.log('User info response status:', response.status);
+                if (!response.ok) {
+                    throw new Error(`Failed to load user info: ${response.status} ${response.statusText}`);
+                }
+                const data = await response.json();
+                console.log('User info received:', data);
+                
+                // Check if sidebar elements exist before updating
+                const usernameElement = document.getElementById('currentUsername');
+                const roleElement = document.getElementById('userRole');
+                
+                if (usernameElement) {
+                    usernameElement.textContent = data.full_name || data.username;
+                }
+                if (roleElement) {
+                    roleElement.textContent = data.position === 'admin' ? 'Administrator' : 'Employee';
+                }
+                
+                // Check if user is admin, redirect if not
+                if (data.position !== 'admin') {
+                    console.warn('User is not an admin, redirecting to dashboard');
+                    window.location.href = '/user_dashboard';
+                    return false;
+                }
+                
+                return true;
+            } catch (error) {
+                console.error('Error loading user info:', error);
+                alert('Error loading user information. Please try logging in again.');
+                window.location.href = '/login';
+                return false;
+            }
+        }
+
+        // Handle logout - will be set up after sidebar is loaded
+        function setupLogoutButton() {
+            const logoutBtn = document.getElementById('logoutBtn');
+            if (logoutBtn) {
+                logoutBtn.addEventListener('click', async function() {
+                    try {
+                        loadingSpinner.style.display = 'flex';
+                        const response = await fetch('/api/logout', {
+                            method: 'POST'
+                        });
+                        if (response.ok) {
+                            window.location.href = '/login';
+                        }
+                    } catch (error) {
+                        console.error('Error during logout:', error);
+                    } finally {
+                        loadingSpinner.style.display = 'none';
+                    }
+                });
+                console.log('Logout button event listener attached');
+            } else {
+                console.warn('Logout button not found in the DOM');
+            }
+        }
+
+        // Load positions
+        async function loadPositions() {
+            try {
+                console.log('Loading positions...');
+                loadingSpinner.style.display = 'flex';
+                
+                // Use credentials to ensure cookies are sent
+                const response = await fetch('/api/positions', {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json'
+                    },
+                    credentials: 'include' // Important for session cookies
+                });
+                
+                console.log('API response status:', response.status);
+                
+                // Handle unauthorized or forbidden
+                if (response.status === 401) {
+                    console.error('Unauthorized access. Redirecting to login...');
+                    window.location.href = '/login';
+                    return;
+                }
+                
+                if (response.status === 403) {
+                    console.error('Forbidden access. User is not admin.');
+                    window.location.href = '/user_dashboard';
+                    return;
+                }
+                
+                if (!response.ok) {
+                    throw new Error(`Failed to load positions: ${response.status} ${response.statusText}`);
+                }
+                
+                const data = await response.json();
+                console.log('Received positions data:', data);
+                
+                // Check if data is an array
+                if (!Array.isArray(data)) {
+                    console.error('Expected array of positions but got:', data);
+                    throw new Error('Invalid data format received from server');
+                }
+                
+                positions = data;
+                renderPositions();
+            } catch (error) {
+                console.error('Error loading positions:', error);
+                positionList.innerHTML = `
+                    <tr>
+                        <td colspan="4" class="text-center py-4 text-danger">
+                            <i class="fas fa-exclamation-circle me-2"></i>
+                            ${error.message || 'Error loading positions. Please try again.'}
+                        </td>
+                    </tr>
+                `;
+            } finally {
+                loadingSpinner.style.display = 'none';
+            }
+        }
+
+        // Render positions
+        function renderPositions() {
+            if (positions.length === 0) {
+                positionList.innerHTML = `
+                    <tr>
+                        <td colspan="4" class="text-center py-4 text-muted">
+                            No positions found. Add your first position.
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+            
+            positionList.innerHTML = positions.map(position => {
+                return `
+                <tr>
+                    <td>${position.id}</td>
+                    <td>${position.name}</td>
+                    <td>${position.description || '-'}</td>
+                    <td>
+                        <div class="btn-group">
+                            <button class="btn btn-sm btn-outline-primary" onclick="openEditModal(${position.id})">
+                                <i class="fas fa-edit me-1"></i>Edit
+                            </button>
+                            <button class="btn btn-sm btn-outline-danger" onclick="openDeleteModal(${position.id})" ${position.name === 'admin' ? 'disabled' : ''}>
+                                <i class="fas fa-trash me-1"></i>Delete
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+                `;
+            }).join('');
+        }
+
+        // Open add position modal
+        document.getElementById('addPositionBtn').addEventListener('click', function() {
+            document.getElementById('modalTitleText').textContent = 'Add Position';
+            document.getElementById('positionId').value = '';
+            document.getElementById('positionName').value = '';
+            document.getElementById('positionDescription').value = '';
+            positionModal.show();
+        });
+
+        // Open edit modal
+        function openEditModal(positionId) {
+            const position = positions.find(p => p.id === positionId);
+            if (!position) return;
+            
+            document.getElementById('modalTitleText').textContent = 'Edit Position';
+            document.getElementById('positionId').value = position.id;
+            document.getElementById('positionName').value = position.name || '';
+            document.getElementById('positionDescription').value = position.description || '';
+            
+            // Disable editing for admin position
+            const isAdmin = position.name === 'admin';
+            document.getElementById('positionName').disabled = isAdmin;
+            document.getElementById('positionDescription').disabled = isAdmin;
+            document.getElementById('savePositionBtn').disabled = isAdmin;
+            
+            positionModal.show();
+        }
+
+        // Open delete modal
+        function openDeleteModal(positionId) {
+            const position = positions.find(p => p.id === positionId);
+            if (!position) return;
+            
+            // Prevent deleting admin position
+            if (position.name === 'admin') {
+                alert('Admin position cannot be deleted.');
+                return;
+            }
+            
+            document.getElementById('deletePositionName').textContent = position.name;
+            document.getElementById('deletePositionId').value = position.id;
+            
+            deleteModal.show();
+        }
+
+        // Save position
+        document.getElementById('savePositionBtn').addEventListener('click', async function() {
+            const form = document.getElementById('positionForm');
+            if (!form.checkValidity()) {
+                form.reportValidity();
+                return;
+            }
+            
+            const positionId = document.getElementById('positionId').value;
+            const isEdit = !!positionId;
+            
+            const positionData = {
+                name: document.getElementById('positionName').value,
+                description: document.getElementById('positionDescription').value
+            };
+            
+            try {
+                loadingSpinner.style.display = 'flex';
+                const url = isEdit ? `/api/positions/${positionId}` : '/api/positions';
+                const method = isEdit ? 'PUT' : 'POST';
+                
+                const response = await fetch(url, {
+                    method: method,
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(positionData)
+                });
+                
+                const responseData = await response.json();
+                
+                if (!responseData.success) {
+                    throw new Error(responseData.message || 'Failed to save position');
+                }
+                
+                alert(isEdit ? 'Position updated successfully!' : 'Position added successfully!');
+                positionModal.hide();
+                await loadPositions();
+            } catch (error) {
+                console.error('Error saving position:', error);
+                alert(error.message || 'Error saving position. Please try again.');
+            } finally {
+                loadingSpinner.style.display = 'none';
+            }
+        });
+
+        // Delete position
+        document.getElementById('confirmDeleteBtn').addEventListener('click', async function() {
+            const positionId = document.getElementById('deletePositionId').value;
+            if (!positionId) return;
+            
+            try {
+                loadingSpinner.style.display = 'flex';
+                const response = await fetch(`/api/positions/${positionId}`, {
+                    method: 'DELETE'
+                });
+                
+                const responseData = await response.json();
+                
+                if (!responseData.success) {
+                    throw new Error(responseData.message || 'Failed to delete position');
+                }
+                
+                alert('Position deleted successfully!');
+                deleteModal.hide();
+                await loadPositions();
+            } catch (error) {
+                console.error('Error deleting position:', error);
+                alert(error.message || 'Error deleting position. Please try again.');
+            } finally {
+                loadingSpinner.style.display = 'none';
+            }
+        });
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', async function() {
+            console.log('DOM content loaded, initializing...');
+            
+            try {
+                // First load the sidebar
+                console.log('Loading sidebar...');
+                await loadSidebar();
+                
+                // Then load user info and check authentication
+                const isAuthenticated = await loadUserInfo();
+                
+                // Only proceed if authenticated
+                if (isAuthenticated) {
+                    console.log('User authenticated, loading positions...');
+                    await loadPositions();
+                    
+                    // Set global functions
+                    window.openEditModal = openEditModal;
+                    window.openDeleteModal = openDeleteModal;
+                }
+            } catch (error) {
+                console.error('Error during initialization:', error);
+                alert('An error occurred while loading the page. Please try refreshing.');
+            }
+        });
+    </script>
+</body>
+</html>

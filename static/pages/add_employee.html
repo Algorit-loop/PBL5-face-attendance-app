@@ -162,25 +162,15 @@
                             <label for="department" class="form-label">Department</label>
                             <select class="form-select" id="department" required>
                                 <option value="">Select Department</option>
-                                <option value="IT">IT</option>
-                                <option value="HR">HR</option>
-                                <option value="Finance">Finance</option>
-                                <option value="Marketing">Marketing</option>
-                                <option value="Operations">Operations</option>
+                                <!-- Departments will be loaded dynamically -->
                             </select>
                         </div>
                         <div class="mb-3">
                             <label for="position" class="form-label">Position</label>
                             <select class="form-select" id="position" required>
                                 <option value="">Select Position</option>
-                                <option value="Manager">Manager</option>
-                                <option value="Team Lead">Team Lead</option>
-                                <option value="Developer">Developer</option>
-                                <option value="Designer">Designer</option>
-                                <option value="HR Officer">HR Officer</option>
-                                <option value="Accountant">Accountant</option>
-                                <option value="Marketing Specialist">Marketing Specialist</option>
-                                </select>
+                                <!-- Positions will be loaded dynamically -->
+                            </select>
                             </div>
                         <div class="mb-3">
                             <label for="username" class="form-label">Username</label>
@@ -277,10 +267,73 @@
             }
         }
 
+        // Load departments from API
+        async function loadDepartments() {
+            try {
+                const response = await fetch('/api/departments');
+                if (!response.ok) {
+                    throw new Error(`Failed to load departments: ${response.status}`);
+                }
+                
+                const departments = await response.json();
+                const departmentSelect = document.getElementById('department');
+                
+                // Clear existing options except the first one
+                while (departmentSelect.options.length > 1) {
+                    departmentSelect.remove(1);
+                }
+                
+                // Add departments from API
+                departments.forEach(dept => {
+                    const option = document.createElement('option');
+                    option.value = dept.name;
+                    option.textContent = dept.name;
+                    departmentSelect.appendChild(option);
+                });
+                
+                console.log('Departments loaded successfully');
+            } catch (error) {
+                console.error('Error loading departments:', error);
+            }
+        }
+        
+        // Load positions from API
+        async function loadPositions() {
+            try {
+                const response = await fetch('/api/positions');
+                if (!response.ok) {
+                    throw new Error(`Failed to load positions: ${response.status}`);
+                }
+                
+                const positions = await response.json();
+                const positionSelect = document.getElementById('position');
+                
+                // Clear existing options except the first one
+                while (positionSelect.options.length > 1) {
+                    positionSelect.remove(1);
+                }
+                
+                // Add positions from API
+                positions.forEach(pos => {
+                    const option = document.createElement('option');
+                    option.value = pos.name;
+                    option.textContent = pos.name;
+                    positionSelect.appendChild(option);
+                });
+                
+                console.log('Positions loaded successfully');
+            } catch (error) {
+                console.error('Error loading positions:', error);
+            }
+        }
+
         // Initialize - call when page loads
         async function initialize() {
             // Generate temporary ID for the scanning process
             try {
+                // Load departments and positions
+                await Promise.all([loadDepartments(), loadPositions()]);
+                
                 const response = await fetch('/api/employees');
                 const employees = await response.json();
                 employeeId = employees.length > 0 
@@ -297,7 +350,7 @@
                     startMonitoringScanStatus();
                 }
             } catch (error) {
-                console.error('Error initializing face scan:', error);
+                console.error('Error during initialization:', error);
             }
         }
         

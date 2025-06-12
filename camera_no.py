@@ -9,53 +9,6 @@ import onnxruntime
 import asyncio
 from controllers.employee_controller import EmployeeController  # Changed import
 import joblib
-import serial  # For Arduino communication
-
-class ServoController:
-    def __init__(self, port='COM6', baudrate=9600):  # Adjust port as needed
-        self.port = port
-        self.baudrate = baudrate
-        self.serial = None
-        self.setup_serial()
-        
-    def setup_serial(self):
-        """Initialize serial communication with Arduino"""
-        try:
-            self.serial = serial.Serial(self.port, self.baudrate, timeout=1)
-            time.sleep(2)  # Wait for Arduino to reset
-            print("Arduino serial connection initialized successfully")
-        except Exception as e:
-            print(f"Error initializing Arduino serial connection: {str(e)}")
-            self.serial = None
-            
-    def open_door(self):
-        """Open the door by sending 'o' command to Arduino"""
-        try:
-            if self.serial:
-                self.serial.write(b'o')  # Send 'o' command to open door
-                time.sleep(1.5)  # Wait for servo to complete movement
-                print("Door opened")
-        except Exception as e:
-            print(f"Error opening door: {str(e)}")
-            
-    def close_door(self):
-        """Close the door by sending 'c' command to Arduino"""
-        try:
-            if self.serial:
-                self.serial.write(b'c')  # Send 'c' command to close door
-                time.sleep(1.5)  # Wait for servo to complete movement
-                print("Door closed")
-        except Exception as e:
-            print(f"Error closing door: {str(e)}")
-            
-    def cleanup(self):
-        """Clean up serial connection"""
-        try:
-            if self.serial:
-                self.serial.close()
-                print("Arduino serial connection closed")
-        except Exception as e:
-            print(f"Error closing Arduino serial connection: {str(e)}")
 
 class FaceScanner:
     def __init__(self):
@@ -141,9 +94,6 @@ onnx_session = onnxruntime.InferenceSession("R50.onnx")
 # Initialize face scanner
 face_scanner = FaceScanner()
 
-# Initialize servo controller
-servo_controller = ServoController(port='COM6')  # Change to your Arduino's port
-
 def process_with_R50(face_image: np.ndarray) -> np.ndarray:
     """
     Tiền xử lý ảnh khuôn mặt, resize về kích thước 112x112 theo yêu cầu của model R50,
@@ -192,9 +142,6 @@ def process_with_R50(face_image: np.ndarray) -> np.ndarray:
 width = 960
 height = 720
 
-# Stream URL
-STREAM_URL = "http://172.20.10.3:81/stream"
-
 # Camera setup
 camera = None
 camera_running = False
@@ -219,13 +166,13 @@ def init_camera() -> bool:
         recognized_employee = None
         
         if camera is None:
-            print("Initializing camera stream...")
-            camera = cv2.VideoCapture(STREAM_URL)
-            # Thêm delay để đảm bảo stream khởi động
+            print("Initializing camera...")
+            camera = cv2.VideoCapture(0)
+            # Thêm delay để đảm bảo camera khởi động
             time.sleep(1)
             
             if not camera.isOpened():
-                raise Exception("Không thể kết nối đến stream")
+                raise Exception("Không thể mở camera")
                 
             # Thiết lập các thuộc tính camera
             camera.set(cv2.CAP_PROP_FRAME_WIDTH, width)
@@ -233,10 +180,10 @@ def init_camera() -> bool:
             camera.set(cv2.CAP_PROP_FPS, 30)
             
             camera_running = True
-            print("Camera stream initialized successfully")
+            print("Camera initialized successfully")
             return True
     except Exception as e:
-        print(f"Lỗi khi khởi tạo camera stream: {str(e)}")
+        print(f"Lỗi khi khởi tạo camera: {str(e)}")
         camera_running = False
         return False
     return True
@@ -256,9 +203,6 @@ def release_camera() -> None:
             print("Camera released successfully")
         
         camera_running = False
-        
-        # Clean up servo controller
-        servo_controller.cleanup()
     except Exception as e:
         print(f"Lỗi khi giải phóng camera: {str(e)}")
         camera_running = False
@@ -367,25 +311,20 @@ def yolo_r50_inference(original_frame: np.ndarray, yolo_frame: np.ndarray) -> No
         # Check if any faces were detected
         if len(res.boxes) == 0:
             print("No faces detected in frame")
-            # Send '0' to Arduino to indicate no face detected
-            if servo_controller.serial:
-                servo_controller.serial.write(b'0')
-            
-            # Reset recognition counter
+            # If no faces detected for more than 5 frames, reset recognition counter
+            # But don't reset immediately to handle occasional missed frames
             if recognition_count > 0:
-                recognition_count = 0
-                print("No face detected, resetting recognition count")
+                recognition_count -= 0.5  # Decrease counter gradually
+                if recognition_count < 0:
+                    recognition_count = 0
+                print(f"No face detected, reducing count to: {recognition_count}")
             
             # Lưu kết quả trống vào global_result
             global_result = []
             processing = False
             return
-
-        # If faces are detected, send '1' to Arduino
-        if servo_controller.serial:
-            servo_controller.serial.write(b'1')
-
-        # Process each detected face
+        
+        # Duyệt qua từng bounding box
         for box in res.boxes:
             # Lấy tọa độ (trên khung hình yolo_frame)
             x1, y1, x2, y2 = map(int, box.xyxy[0])
@@ -464,12 +403,16 @@ def yolo_r50_inference(original_frame: np.ndarray, yolo_frame: np.ndarray) -> No
         # Lưu kết quả tùy chỉnh vào global_result
         global_result = custom_results
         
-        # Update recognition history for display purposes only
+        # Update recognition history
         if current_recognized_id:
             # If the same employee is recognized as before
             if recognized_employee and recognized_employee["id"] == current_recognized_id:
                 recognition_count += 1
                 print(f"Consecutive recognition: {recognition_count} for ID {current_recognized_id}")
+                
+                # If we have 3 consecutive recognitions, set the recognized employee
+                if recognition_count >= 3:
+                    print(f"Employee {current_recognized_id} verified after 3 consecutive recognitions")
             else:
                 # Reset for new employee
                 recognized_employee = current_employee_data
