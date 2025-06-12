@@ -193,7 +193,7 @@ width = 960
 height = 720
 
 # Stream URL
-STREAM_URL = "http://172.20.10.2:81/stream"
+STREAM_URL = "http://172.20.10.4:81/stream"
 
 # Camera setup
 camera = None
