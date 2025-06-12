@@ -23,15 +23,19 @@ class EmployeeController:
             employee_id: Employee ID
             
         Returns:
-            Employee data
-            
-        Raises:
-            HTTPException: If employee not found
+            Employee data or None if not found
         """
-        employee = database.get_employee_by_id(employee_id)
-        if not employee:
-            raise HTTPException(status_code=404, detail="Không tìm thấy nhân viên")
-        return employee
+        try:
+            employee = database.get_employee_by_id(employee_id)
+            if not employee:
+                print(f"Employee with ID {employee_id} not found in database")
+                return None
+            return employee
+        except Exception as e:
+            print(f"Error in get_by_id: {str(e)}")
+            import traceback
+            traceback.print_exc()
+            return None
 
     @staticmethod
     async def create(employee: Employee):

@@ -10,12 +10,15 @@ import subprocess
 import os
 import json
 import time
+import cv2
 from datetime import datetime
 import uvicorn
 import base64
+import sys
 
 from models import Employee, APIResponse
 from controllers.employee_controller import EmployeeController
+import database
 import camera
 
 # Create FastAPI app
@@ -317,11 +320,11 @@ async def video_feed(request: Request):
 @app.get("/scan_feed")
 async def scan_feed(request: Request):
     try:
-        session = login_required(request)
-        # Ensure camera is initialized
+        session = admin_required(request)
+        # Initialize camera if not running
         if not camera.camera_running:
             camera.init_camera()
-        # Return scanning video stream
+        # Use scan_frames() for face scanning mode
         return StreamingResponse(
             camera.scan_frames(),
             media_type="multipart/x-mixed-replace; boundary=frame"
@@ -414,54 +417,67 @@ async def verify_face(request: Request):
         session = login_required(request)
         # Ensure camera is initialized
         if not camera.camera_running:
-            camera.init_camera()
-            
-        # Get current frame
-        ret, frame = camera.camera.read()
-        if not ret or frame is None:
-            return {"success": False, "message": "Failed to capture frame"}
-            
-        # Process with YOLO and R50
-        # Create YOLO input frame
-        yolo_frame = cv2.resize(frame, (640, 640))
+            print("Camera not running, initializing...")
+            if not camera.init_camera():
+                return {"success": False, "message": "Failed to initialize camera"}
         
-        # Run inference
-        camera.yolo_r50_inference(frame, yolo_frame)
-        
-        # Check results
-        if camera.global_result is None or len(camera.global_result) == 0:
-            return {"success": False, "message": "No face detected"}
+        # Get the current recognition status
+        if camera.recognized_employee and camera.recognition_count >= 3:
+            # Employee has been recognized in 3 consecutive frames
+            employee_id = camera.recognized_employee["id"]
+            print(f"Recognized employee ID: {employee_id}, type: {type(employee_id)}")
             
-        # Get face with highest confidence
-        best_face = None
-        for face in camera.global_result:
-            if face['id_user'] != "Unknown":
-                # If we already have a match, just return it
-                best_face = face
-                break
-                
-        if best_face is None:
-            return {"success": False, "message": "No recognized face"}
+            # Ensure employee_id is an integer for database lookup
+            try:
+                employee_id = int(employee_id)
+            except (ValueError, TypeError):
+                print(f"Error converting employee_id to int: {employee_id}")
+                return {"success": False, "message": f"Invalid employee ID format: {employee_id}"}
             
-        # Get employee details
-        employee_controller = EmployeeController()
-        employee = await employee_controller.get_by_id(best_face['id_user'])
-        
-        if not employee:
-            return {"success": False, "message": "Employee not found"}
+            # Get employee details using the controller
+            employee_controller = EmployeeController()
+            employee = await employee_controller.get_by_id(employee_id)
             
-        return {
-            "success": True,
-            "employee": {
-                "id": employee["id"],
-                "full_name": employee["full_name"],
-                "department": employee["department"],
-                "position": employee["position"]
-            },
-            "confidence": best_face['conf']
-        }
+            if not employee:
+                print(f"Employee with ID {employee_id} not found in database")
+                # Reset recognition because we can't verify this employee
+                camera.reset_recognition()
+                return {
+                    "success": False, 
+                    "message": f"Employee with ID {employee_id} not found in database",
+                    "recognition_count": 0
+                }
+            
+            print(f"Found employee: {employee['full_name']}")
+            return {
+                "success": True,
+                "employee": {
+                    "id": employee["id"],
+                    "full_name": employee["full_name"],
+                    "department": employee["department"],
+                    "position": employee["position"]
+                },
+                "verified": True
+            }
+        elif camera.recognized_employee and camera.recognition_count > 0:
+            # Employee is being recognized but not yet verified
+            return {
+                "success": False, 
+                "message": "Waiting for consistent recognition",
+                "recognition_count": int(camera.recognition_count),
+                "employee_id": camera.recognized_employee["id"]
+            }
+        else:
+            # No recognition yet
+            return {
+                "success": False, 
+                "message": "Waiting for face detection",
+                "recognition_count": 0
+            }
     except Exception as e:
         print(f"Error verifying face: {str(e)}")
+        import traceback
+        traceback.print_exc()
         return {"success": False, "message": str(e)}
 
 # Mark attendance
@@ -474,6 +490,9 @@ async def mark_attendance(request: Request, data: dict):
         
         if not employee_id:
             return {"success": False, "message": "Employee ID is required"}
+        
+        # Reset recognition state after marking attendance
+        camera.reset_recognition()
             
         # In a real app, this would save to a database
         # For now, just return success
@@ -532,6 +551,17 @@ async def camera_info(request: Request):
     except HTTPException as e:
         return e
 
+# Reset face recognition
+@app.post("/api/reset-recognition")
+async def reset_recognition(request: Request):
+    try:
+        session = login_required(request)
+        # Reset recognition tracking
+        camera.reset_recognition()
+        return {"success": True, "message": "Recognition reset successfully"}
+    except HTTPException as e:
+        return e
+
 @app.post("/api/train")
 async def train_model(request: Request):
     try:
@@ -556,41 +586,6 @@ training_status = {
 async def train_status():
     return training_status
 
-# def run_training():
-#     try:
-#         print(">>> Đang chạy training.py ...", flush=True)
-#         # Sử dụng "source venv/bin/activate && python training.py" với shell=True
-#         # command = ". venv/Scripts/activate && python training.py"
-#         # command = "python training.py"
-#         command = "venv\\Scripts\\Activate.ps1; python training.py"
-
-#         proc = subprocess.Popen(
-#             command,
-#             stdout=subprocess.PIPE,
-#             stderr=subprocess.PIPE,
-#             shell=True,
-#             text=True
-#         )
-#         # In realtime output
-#         while True:
-#             print("ccacaacc")
-#             line = proc.stdout.readline()
-#             if not line:
-#                 break
-#             print(line, flush=True)
-#         proc.wait()
-#         if proc.returncode != 0:
-#             for line in proc.stderr:
-#                 print(line, flush=True)
-#         from camera import Camera
-#         Camera.reload_model()
-#         print(">>> Model đã được reload", flush=True)
-#     except Exception as e:
-#         print(f"Training error: {e}", flush=True)
-#     finally:
-#         training_status["is_training"] = False
-import sys, subprocess, textwrap
-
 def run_training():
     print(">>> Đang chạy training.py ...", flush=True)
 
@@ -605,17 +600,29 @@ def run_training():
         text=True
     )
 
-    # Đọc realtime
-    for line in proc.stdout:
-        print(line, end="", flush=True)
+    # In realtime output
+    while True:
+        line = proc.stdout.readline()
+        if not line:
+            break
+        print(line.rstrip(), flush=True)
 
+    # Chờ tiến trình kết thúc và kiểm tra lỗi
     proc.wait()
     if proc.returncode != 0:
-        print(proc.stderr.read(), flush=True)
+        print(">>> Lỗi khi chạy training.py:", flush=True)
+        for line in proc.stderr:
+            print(line.rstrip(), flush=True)
+    else:
+        print(">>> Training hoàn thành thành công", flush=True)
 
+    # Reload model sau khi training
     from camera import Camera
     Camera.reload_model()
     print(">>> Model đã được reload", flush=True)
+    
+    # Reset training status
+    training_status["is_training"] = False
 
 # Page routes
 @app.get("/verify")
@@ -641,9 +648,6 @@ async def add_employee_page(request: Request):
         return RedirectResponse(url="/static/pages/add_employee.html")
     except HTTPException:
         return RedirectResponse(url="/login")
-
-# Import OpenCV here to avoid circular imports
-import cv2
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)

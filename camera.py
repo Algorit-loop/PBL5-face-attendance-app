@@ -153,14 +153,34 @@ global_result = None  # Kết quả YOLO (và sau đó có thể gồm thêm th�
 processing = False    # Cờ báo trạng thái inference đang chạy hay không
 frame_count = 0       # Đếm số frame
 
+# Tracking recognition - new
+recognition_history = []    # Track consecutive recognitions
+recognized_employee = None  # Currently recognized employee
+recognition_count = 0       # Count of consecutive recognitions
+
 def init_camera() -> bool:
-    global camera, camera_running
+    global camera, camera_running, recognition_count, recognized_employee
     try:
+        # Reset recognition state when initializing camera
+        recognition_count = 0
+        recognized_employee = None
+        
         if camera is None:
+            print("Initializing camera...")
             camera = cv2.VideoCapture(0)
+            # Thêm delay để đảm bảo camera khởi động
+            time.sleep(1)
+            
             if not camera.isOpened():
                 raise Exception("Không thể mở camera")
+                
+            # Thiết lập các thuộc tính camera
+            camera.set(cv2.CAP_PROP_FRAME_WIDTH, width)
+            camera.set(cv2.CAP_PROP_FRAME_HEIGHT, height)
+            camera.set(cv2.CAP_PROP_FPS, 30)
+            
             camera_running = True
+            print("Camera initialized successfully")
             return True
     except Exception as e:
         print(f"Lỗi khi khởi tạo camera: {str(e)}")
@@ -169,15 +189,25 @@ def init_camera() -> bool:
     return True
 
 def release_camera() -> None:
-    global camera, camera_running
+    global camera, camera_running, recognition_count, recognized_employee
     try:
+        print("Releasing camera...")
+        # Reset recognition state when releasing camera
+        recognition_count = 0
+        recognized_employee = None
+        
         if camera is not None:
+            # Release the camera
             camera.release()
             camera = None
+            print("Camera released successfully")
+        
         camera_running = False
     except Exception as e:
         print(f"Lỗi khi giải phóng camera: {str(e)}")
         camera_running = False
+        # Ensure camera is set to None even if there was an error
+        camera = None
 
 def get_camera_info() -> Dict[str, Any]:
     if camera is None or not camera.isOpened():
@@ -224,10 +254,23 @@ def update_employee_mapping():
     try:
         # Get employees using EmployeeController
         employees = asyncio.run(EmployeeController.get_all())
+        # Ensure all IDs are strings for consistent lookup
         employee_dict = {str(emp["id"]): emp["full_name"] for emp in employees}
-        print(f"Updated employee mapping with {len(employee_dict)} employees")
+        print(f"Updated employee mapping with {len(employee_dict)} employees:")
+        for id_str, name in employee_dict.items():
+            print(f"  ID: {id_str} -> {name}")
     except Exception as e:
         print(f"Error updating employee mapping: {str(e)}")
+        import traceback
+        traceback.print_exc()
+
+# Reset recognition tracking
+def reset_recognition():
+    """Reset all recognition tracking variables"""
+    global recognized_employee, recognition_count
+    recognized_employee = None
+    recognition_count = 0
+    print("Recognition tracking reset")
 
 # Initial update of employee mapping
 update_employee_mapping()
@@ -246,7 +289,7 @@ def yolo_r50_inference(original_frame: np.ndarray, yolo_frame: np.ndarray) -> No
     model R50 trên mỗi khuôn mặt được phát hiện, dùng hệ số scale để chuyển tọa độ sang original_frame.
     Dự đoán id_user bằng SVM với ngưỡng xác suất 0.7, lưu vào kết quả.
     """
-    global global_result, processing
+    global global_result, processing, recognition_history, recognized_employee, recognition_count
     try:
         start_time = time.time()  # Ghi lại thời gian bắt đầu
         
@@ -259,6 +302,27 @@ def yolo_r50_inference(original_frame: np.ndarray, yolo_frame: np.ndarray) -> No
         # Tính scaling factors từ khung hình YOLO đến original_frame
         scale_x = original_frame.shape[1] / yolo_frame.shape[1]
         scale_y = original_frame.shape[0] / yolo_frame.shape[0]
+        
+        # Variables to track the best recognized face
+        current_recognized_id = None
+        current_employee_data = None
+        highest_prob = 0.0
+        
+        # Check if any faces were detected
+        if len(res.boxes) == 0:
+            print("No faces detected in frame")
+            # If no faces detected for more than 5 frames, reset recognition counter
+            # But don't reset immediately to handle occasional missed frames
+            if recognition_count > 0:
+                recognition_count -= 0.5  # Decrease counter gradually
+                if recognition_count < 0:
+                    recognition_count = 0
+                print(f"No face detected, reducing count to: {recognition_count}")
+            
+            # Lưu kết quả trống vào global_result
+            global_result = []
+            processing = False
+            return
         
         # Duyệt qua từng bounding box
         for box in res.boxes:
@@ -296,8 +360,22 @@ def yolo_r50_inference(original_frame: np.ndarray, yolo_frame: np.ndarray) -> No
                         pred = svm_model.predict(embedding)[0]
                         id_user = label_encoder.inverse_transform([pred])[0]
                         # Use the employee dictionary to get the name
-                        print(f"Predicted id_user: {id_user}")
+                        print(f"Predicted id_user: {id_user}, type: {type(id_user)}")
+                        
+                        # Ensure id_user is an integer
+                        try:
+                            id_user_int = int(id_user)
+                            id_user = id_user_int
+                        except (ValueError, TypeError):
+                            print(f"Warning: Unable to convert id_user {id_user} to int")
+                        
                         name = employee_dict.get(str(id_user), "Unknown")
+                        
+                        # Track the face with highest probability for recognition history
+                        if max_prob > highest_prob and id_user != "Unknown":
+                            highest_prob = max_prob
+                            current_recognized_id = id_user
+                            current_employee_data = {"id": id_user, "name": name}
                     else:
                         id_user = "Unknown"
                         name = "Unknown"
@@ -325,10 +403,32 @@ def yolo_r50_inference(original_frame: np.ndarray, yolo_frame: np.ndarray) -> No
         # Lưu kết quả tùy chỉnh vào global_result
         global_result = custom_results
         
+        # Update recognition history
+        if current_recognized_id:
+            # If the same employee is recognized as before
+            if recognized_employee and recognized_employee["id"] == current_recognized_id:
+                recognition_count += 1
+                print(f"Consecutive recognition: {recognition_count} for ID {current_recognized_id}")
+                
+                # If we have 3 consecutive recognitions, set the recognized employee
+                if recognition_count >= 3:
+                    print(f"Employee {current_recognized_id} verified after 3 consecutive recognitions")
+            else:
+                # Reset for new employee
+                recognized_employee = current_employee_data
+                recognition_count = 1
+                print(f"New recognition: {current_recognized_id}")
+        else:
+            # No recognized face in this frame (Unknown)
+            # Keep the current recognition state to avoid immediate reset
+            # (recognition_count will be decreased gradually in UI only)
+            pass
+        
         end_time = time.time()  # Ghi lại thời gian kết thúc
         print(f"Thời gian chạy yolo_r50_inference: {(end_time - start_time) * 1000:.2f} ms")
     except Exception as e:
         print(f"Lỗi khi chạy inference kết hợp YOLO và R50: {str(e)}")
+    
     processing = False
 
 def generate_frames() -> Generator[bytes, None, None]:
@@ -368,6 +468,7 @@ def generate_frames() -> Generator[bytes, None, None]:
                                 x1, y1, x2, y2 = map(int, result['xyxy'])
                                 conf = result['conf']
                                 name = result['name']
+                                id_user = result['id_user']
                                 
                                 # Chuyển tọa độ sang khung hình gốc
                                 x1_scaled = int(x1 * scale_x)
@@ -375,19 +476,40 @@ def generate_frames() -> Generator[bytes, None, None]:
                                 x2_scaled = int(x2 * scale_x)
                                 y2_scaled = int(y2 * scale_y)
                                 
+                                # Thiết lập màu dựa trên trạng thái nhận diện
+                                color = (0, 255, 0)  # Xanh lá mặc định
+                                if id_user == "Unknown":
+                                    color = (0, 0, 255)  # Đỏ cho Unknown
+                                elif recognized_employee and recognized_employee["id"] == id_user:
+                                    if recognition_count >= 3:
+                                        color = (0, 255, 255)  # Vàng cho đã xác minh
+                                    else:
+                                        color = (0, 165, 255)  # Cam cho đang xác minh
+                                
                                 # Vẽ bounding box
                                 cv2.rectangle(frame, (x1_scaled, y1_scaled), 
-                                            (x2_scaled, y2_scaled), (0, 255, 0), 2)
+                                            (x2_scaled, y2_scaled), color, 2)
                                 
                                 # Vẽ conf phía trên bounding box
                                 conf_label = f"{conf:.2f}"
                                 cv2.putText(frame, conf_label, (x1_scaled, y1_scaled - 10),
-                                           cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
+                                           cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 2)
                                 
                                 # Vẽ Name phía dưới bounding box
                                 name_label = f"Name: {name}"
                                 cv2.putText(frame, name_label, (x1_scaled, y2_scaled + 20),
-                                           cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
+                                           cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 2)
+                                           
+                        # Hiển thị trạng thái nhận diện lên frame
+                        if recognized_employee and recognition_count > 0:
+                            # In debug thông tin nhận diện
+                            print(f"Recognition info: employee_id={recognized_employee['id']}, count={recognition_count}")
+                            
+                            status_text = f"Đang xác minh: {recognized_employee['name']} ({int(recognition_count)}/3)"
+                            if recognition_count >= 3:
+                                status_text = f"Đã xác minh: {recognized_employee['name']}"
+                            cv2.putText(frame, status_text, (10, 30), 
+                                      cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 165, 255), 2)
                 except Exception as e:
                     print(f"Lỗi khi xử lý frame: {str(e)}")
                     frame = np.zeros((height, width, 3), dtype=np.uint8)
