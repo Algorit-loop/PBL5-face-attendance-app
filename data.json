@@ -63,5 +63,18 @@
     "department": "IT",
     "username": "123123",
     "password": "123"
+  },
+  {
+    "id": 7,
+    "full_name": "Võ Quốc Hiếu",
+    "birth_date": "2004-03-03",
+    "email": "timapyugioh@gmail.com",
+    "phone": "0375535008",
+    "address": "48 Ngô Sĩ Liên",
+    "gender": "male",
+    "position": "Developer",
+    "department": "IT",
+    "username": "timap030304",
+    "password": "timap191009"
   }
 ]

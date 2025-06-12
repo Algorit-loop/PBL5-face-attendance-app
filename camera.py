@@ -9,6 +9,55 @@ import onnxruntime
 import asyncio
 from controllers.employee_controller import EmployeeController  # Changed import
 import joblib
+import RPi.GPIO as GPIO  # For servo control
+
+class ServoController:
+    def __init__(self, pin=18):  # GPIO18 is commonly used for servo
+        self.pin = pin
+        self.is_open = False
+        self.setup_gpio()
+        
+    def setup_gpio(self):
+        """Initialize GPIO for servo control"""
+        try:
+            GPIO.setmode(GPIO.BCM)
+            GPIO.setup(self.pin, GPIO.OUT)
+            self.pwm = GPIO.PWM(self.pin, 50)  # 50Hz frequency
+            self.pwm.start(0)
+            print("Servo GPIO initialized successfully")
+        except Exception as e:
+            print(f"Error initializing servo GPIO: {str(e)}")
+            
+    def open_door(self):
+        """Open the door by rotating servo to 90 degrees"""
+        try:
+            if not self.is_open:
+                self.pwm.ChangeDutyCycle(7.5)  # 90 degrees
+                time.sleep(1)  # Wait for servo to reach position
+                self.is_open = True
+                print("Door opened")
+        except Exception as e:
+            print(f"Error opening door: {str(e)}")
+            
+    def close_door(self):
+        """Close the door by rotating servo to 0 degrees"""
+        try:
+            if self.is_open:
+                self.pwm.ChangeDutyCycle(2.5)  # 0 degrees
+                time.sleep(1)  # Wait for servo to reach position
+                self.is_open = False
+                print("Door closed")
+        except Exception as e:
+            print(f"Error closing door: {str(e)}")
+            
+    def cleanup(self):
+        """Clean up GPIO resources"""
+        try:
+            self.pwm.stop()
+            GPIO.cleanup()
+            print("Servo GPIO cleaned up")
+        except Exception as e:
+            print(f"Error cleaning up servo GPIO: {str(e)}")
 
 class FaceScanner:
     def __init__(self):
@@ -94,6 +143,9 @@ onnx_session = onnxruntime.InferenceSession("R50.onnx")
 # Initialize face scanner
 face_scanner = FaceScanner()
 
+# Initialize servo controller
+servo_controller = ServoController()
+
 def process_with_R50(face_image: np.ndarray) -> np.ndarray:
     """
     Tiền xử lý ảnh khuôn mặt, resize về kích thước 112x112 theo yêu cầu của model R50,
@@ -142,6 +194,9 @@ def process_with_R50(face_image: np.ndarray) -> np.ndarray:
 width = 960
 height = 720
 
+# Stream URL
+STREAM_URL = "http://172.20.10.2:81/stream"
+
 # Camera setup
 camera = None
 camera_running = False
@@ -166,13 +221,13 @@ def init_camera() -> bool:
         recognized_employee = None
         
         if camera is None:
-            print("Initializing camera...")
-            camera = cv2.VideoCapture(0)
-            # Thêm delay để đảm bảo camera khởi động
+            print("Initializing camera stream...")
+            camera = cv2.VideoCapture(STREAM_URL)
+            # Thêm delay để đảm bảo stream khởi động
             time.sleep(1)
             
             if not camera.isOpened():
-                raise Exception("Không thể mở camera")
+                raise Exception("Không thể kết nối đến stream")
                 
             # Thiết lập các thuộc tính camera
             camera.set(cv2.CAP_PROP_FRAME_WIDTH, width)
@@ -180,10 +235,10 @@ def init_camera() -> bool:
             camera.set(cv2.CAP_PROP_FPS, 30)
             
             camera_running = True
-            print("Camera initialized successfully")
+            print("Camera stream initialized successfully")
             return True
     except Exception as e:
-        print(f"Lỗi khi khởi tạo camera: {str(e)}")
+        print(f"Lỗi khi khởi tạo camera stream: {str(e)}")
         camera_running = False
         return False
     return True
@@ -203,6 +258,9 @@ def release_camera() -> None:
             print("Camera released successfully")
         
         camera_running = False
+        
+        # Clean up servo controller
+        servo_controller.cleanup()
     except Exception as e:
         print(f"Lỗi khi giải phóng camera: {str(e)}")
         camera_running = False
@@ -410,9 +468,13 @@ def yolo_r50_inference(original_frame: np.ndarray, yolo_frame: np.ndarray) -> No
                 recognition_count += 1
                 print(f"Consecutive recognition: {recognition_count} for ID {current_recognized_id}")
                 
-                # If we have 3 consecutive recognitions, set the recognized employee
+                # If we have 3 consecutive recognitions, set the recognized employee and open door
                 if recognition_count >= 3:
                     print(f"Employee {current_recognized_id} verified after 3 consecutive recognitions")
+                    # Open the door when employee is verified
+                    servo_controller.open_door()
+                    # Close the door after 5 seconds
+                    threading.Timer(5.0, servo_controller.close_door).start()
             else:
                 # Reset for new employee
                 recognized_employee = current_employee_data
